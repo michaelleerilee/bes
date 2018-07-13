@@ -64,9 +64,9 @@ BESCatalogList *BESCatalogList::d_instance = 0;
  * header file (currently the confusing name "catalog").
  *
  * The implementation will only build one instance of CatalogList and
- * thereafter simple return that pointer.
+ * thereafter return that pointer.
  *
- * For this code, the default catalog is implemented suing CatalogDirectory,
+ * For this code, the default catalog is implemented using CatalogDirectory,
  * which exposes the BES's local POSIX file system, rooted at a place set in
  * the BES configuration file.
  *
@@ -79,7 +79,7 @@ BESCatalogList::TheCatalogList() {
 }
 
 /**
- * private static that only get's called once by using pthread_once and
+ * private static that only is called using pthread_once and
  * pthread_once_t mutex.
  */
 void BESCatalogList::initialize_instance() {
@@ -92,7 +92,7 @@ void BESCatalogList::initialize_instance() {
 }
 
 /**
- * Private static function can only be called by friends and pThreads code.
+ * Private static function can only be called by friends and pthreads code.
  */
 void BESCatalogList::delete_instance() {
     delete d_instance;

@@ -33,7 +33,6 @@
 using namespace bes;
 using namespace std;
 
-
 /**
  * Dump out information about this object
  * @param strm Write to this stream

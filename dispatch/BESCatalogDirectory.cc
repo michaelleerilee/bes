@@ -306,7 +306,8 @@ static string get_time(time_t the_time, bool use_local_time = false)
  *
  * @param path The pathname for the node; must start with a slash (/)
  * @return A CatalogNode instance or null if there is no such path in the
- * current catalog.
+ * current catalog (but note that if \arg path is not a directory, an
+ * exception is thrown).
  * @throw BESInternalError If the \arg path is not a directory
  * @throw BESForbiddenError If the \arg path is explicitly excluded by the
  * bes.conf file
@@ -374,18 +375,9 @@ BESCatalogDirectory::get_node(const string &path) const
             // Is this a directory or a file? Should it be excluded or included?
             statret = stat(item_path.c_str(), &buf);
             if (statret == 0 && S_ISDIR(buf.st_mode) && !d_utils->exclude(item)) {
-#if 0
-                // Add a new node; set the size to zero.
-                node->add_item(new CatalogItem(item, 0, get_time(buf.st_mtime), CatalogItem::node));
-#endif
                 node->add_node(new CatalogItem(item, 0, get_time(buf.st_mtime), CatalogItem::node));
             }
             else if (statret == 0 && S_ISREG(buf.st_mode) && d_utils->include(item)) {
-#if 0
-                // Add a new leaf.
-                node->add_item(new CatalogItem(item, buf.st_size, get_time(buf.st_mtime),
-                    d_utils->is_data(item), CatalogItem::leaf));
-#endif
                 node->add_leaf(new CatalogItem(item, buf.st_size, get_time(buf.st_mtime),
                     d_utils->is_data(item), CatalogItem::leaf));
             }

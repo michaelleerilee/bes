@@ -53,6 +53,17 @@ class BESCatalogEntry;
 // I think this should be a member of a catalog, not a singleton with
 // a list of classes. jhrg 2.25.18
 
+/**
+ * @brief Singleton for various utilities for BES catalogs
+ *
+ * This class provides a way to minimize the (re)reading of the
+ * BES configuration information regarding catalogs, handlers and
+ * the TypeMatch regular expressions that are defined for each
+ * Catalog.
+ *
+ * @note the BES uses the notion of a default catalog and this class
+ * provides a way to get the name of that catalog.
+ */
 class BESCatalogUtils: public BESObj {
 private:
 #if 1
