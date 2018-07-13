@@ -30,6 +30,8 @@
 //      pwest       Patrick West <pwest@ucar.edu>
 //      jgarcia     Jose Garcia <jgarcia@ucar.edu>
 
+#include "config.h"
+
 #include "BESXMLCatalogCommand.h"
 #include "BESContainerStorageList.h"
 #include "BESNames.h"
@@ -46,7 +48,9 @@ BESXMLCatalogCommand::BESXMLCatalogCommand(const BESDataHandlerInterface &base_d
 
 /** @brief parse a show command. No properties or children elements
  *
- &lt;showCatalog node="containerName" /&gt;
+ * ~~~{.xml}
+ * <showCatalog node="path"/>
+ * ~~~
  *
  * @param node xml2 element node pointer
  */
@@ -56,34 +60,37 @@ void BESXMLCatalogCommand::parse_request(xmlNode *node)
     string value;
     map<string, string> props;
     BESXMLUtils::GetNodeInfo(node, name, value, props);
-    if (name != CATALOG_RESPONSE_STR && name != SHOW_INFO_RESPONSE_STR) {
-        string err = "The specified command " + name + " is not a show catalog or show info command";
+    if (name != CATALOG_RESPONSE_STR /*&& name != SHOW_INFO_RESPONSE_STR*/) {
+        string err = "The specified command " + name + " is not a show catalog command";
         throw BESSyntaxUserError(err, __FILE__, __LINE__);
     }
 
-    // the action is the same for show catalog and show info
     d_xmlcmd_dhi.action = CATALOG_RESPONSE;
 
-    // the CATALOG_OR_INFO data value will say if it's a show catalog or
-    // show info
+#if 0
+    // FIXME we never use the showInfo command: remove
+
     if (name == CATALOG_RESPONSE_STR) {
         d_xmlcmd_dhi.data[CATALOG_OR_INFO] = CATALOG_RESPONSE;
         d_cmd_log_info = "show catalog";
     }
+#endif
+
+#if 0
     else {
         d_xmlcmd_dhi.data[CATALOG_OR_INFO] = SHOW_INFO_RESPONSE;
         d_cmd_log_info = "show info";
     }
+#endif
 
     // node is an optional property, so could be empty string
     d_xmlcmd_dhi.data[CONTAINER] = props["node"];
     if (!d_xmlcmd_dhi.data[CONTAINER].empty()) {
         d_cmd_log_info += " for " + d_xmlcmd_dhi.data[CONTAINER];
     }
+
     d_cmd_log_info += ";";
 
-    // now that we've set the action, go get the response handler for the
-    // action
     BESXMLCommand::set_response();
 }
 

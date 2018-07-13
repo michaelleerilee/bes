@@ -30,6 +30,8 @@
 //      pwest       Patrick West <pwest@ucar.edu>
 //      jgarcia     Jose Garcia <jgarcia@ucar.edu>
 
+#include "config.h"
+
 #include "BESCatalogResponseHandler.h"
 #include "BESInfoList.h"
 #include "BESInfo.h"
@@ -67,50 +69,50 @@ BESCatalogResponseHandler::~BESCatalogResponseHandler()
  */
 void BESCatalogResponseHandler::execute(BESDataHandlerInterface &dhi)
 {
-
     BESStopWatch sw;
     if (BESISDEBUG(TIMING_LOG)) sw.start("BESCatalogResponseHandler::execute", dhi.data[REQUEST_ID]);
 
-    BESInfo *info = BESInfoList::TheList()->build_info();
-    d_response_object = info;
-
-    string container = dhi.data[CONTAINER];
-    string catname;
     string defcatname = BESCatalogList::TheCatalogList()->default_catalog_name();
     BESCatalog *defcat = BESCatalogList::TheCatalogList()->find_catalog(defcatname);
     if (!defcat) {
-        string err = (string) "Not able to find the default catalog " + defcatname;
+        string err = (string) "Not able to find the default catalog '" + defcatname + "'";
         throw BESInternalError(err, __FILE__, __LINE__);
     }
 
-    // remove all of the leading slashes from the container name
+    // This is the object used to build the response the showCatalog command will return
+    BESInfo *info = BESInfoList::TheList()->build_info();
+    d_response_object = info;
+
+    // Remove all of the leading slashes from the container name.
+    // In: /path/to/data or path/to/data, Out: path/to/data
+    string container = dhi.data[CONTAINER];
     string::size_type notslash = container.find_first_not_of("/", 0);
     if (notslash != string::npos) {
         container = container.substr(notslash);
     }
 
-    // see if there is a catalog name here. It's only a possible catalog
-    // name
+    // Is there a catalog name here?
+    // In: path/to/data, or path/, Out: path
     string::size_type slash = container.find_first_of("/", 0);
+    string catname = container;
     if (slash != string::npos) {
         catname = container.substr(0, slash);
     }
-    else {
-        catname = container;
-    }
 
-    // see if this catalog exists. If it does, then remove the catalog
-    // name from the container (node)
+    // Does this catalog exist? If it does, then remove the catalog
+    // name from the path
     BESCatalog *catobj = BESCatalogList::TheCatalogList()->find_catalog(catname);
     if (catobj) {
         if (slash != string::npos) {
             container = container.substr(slash + 1);
 
+#if 0
             // remove repeated slashes
             notslash = container.find_first_not_of("/", 0);
             if (notslash != string::npos) {
                 container = container.substr(notslash);
             }
+#endif
         }
         else {
             container = "";
@@ -119,16 +121,18 @@ void BESCatalogResponseHandler::execute(BESDataHandlerInterface &dhi)
 
     if (container.empty()) container = "/";
 
+#if 0
     string coi = dhi.data[CATALOG_OR_INFO];
+#endif
 
     BESCatalogEntry *entry = 0;
     if (catobj) {
-        entry = catobj->show_catalog(container, /*coi,*/ entry);
+        entry = catobj->show_catalog(container, /*coi,*/entry);
     }
     else {
         // we always want to get the container information from the
         // default catalog, whether the node is / or not
-        entry = defcat->show_catalog(container, /*coi,*/ entry);
+        entry = defcat->show_catalog(container, /*coi,*/entry);
 
         // we only care to get the list of catalogs if the container is
         // slash (/)
@@ -143,6 +147,7 @@ void BESCatalogResponseHandler::execute(BESDataHandlerInterface &dhi)
         throw BESNotFoundError(err, __FILE__, __LINE__);
     }
 
+#if 0
     // now that we have all the catalog entry information, display it
     // start the response depending on if show catalog or show info
     if (coi == CATALOG_RESPONSE) {
@@ -153,10 +158,15 @@ void BESCatalogResponseHandler::execute(BESDataHandlerInterface &dhi)
         info->begin_response(SHOW_INFO_RESPONSE_STR, dhi);
         dhi.action_name = SHOW_INFO_RESPONSE_STR;
     }
+#endif
+
+    info->begin_response(CATALOG_RESPONSE_STR, dhi);
+    dhi.action_name = CATALOG_RESPONSE_STR;
 
     // start with the first level entry
     BESCatalogUtils::display_entry(entry, info);
 
+#if 0
     // if we are doing a catalog response, then go one deeper
     if (coi == CATALOG_RESPONSE) {
         BESCatalogEntry::catalog_citer ei = entry->get_beginning_entry();
@@ -166,6 +176,15 @@ void BESCatalogResponseHandler::execute(BESDataHandlerInterface &dhi)
             info->end_tag("dataset");
         }
     }
+#endif
+
+    BESCatalogEntry::catalog_citer ei = entry->get_beginning_entry();
+    BESCatalogEntry::catalog_citer ee = entry->get_ending_entry();
+    for (; ei != ee; ei++) {
+        BESCatalogUtils::display_entry((*ei).second, info);
+        info->end_tag("dataset");
+    }
+
     info->end_tag("dataset");
 
     // end the response object
@@ -189,7 +208,7 @@ void BESCatalogResponseHandler::transmit(BESTransmitter *transmitter, BESDataHan
 {
     if (d_response_object) {
         BESInfo *info = dynamic_cast<BESInfo *>(d_response_object);
-        if (!info) throw BESInternalError("cast error", __FILE__, __LINE__);
+        if (!info) throw BESInternalError("Expected a BESInfo object for the showCatalog command response.", __FILE__, __LINE__);
         info->transmit(transmitter, dhi);
     }
 }

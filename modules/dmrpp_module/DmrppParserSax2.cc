@@ -463,11 +463,6 @@ inline bool DmrppParserSax2::process_enum_def(const char *name, const xmlChar **
 
     // This getter allocates a new object if needed.
     string enum_def_path = xml_attrs["name"].value;
-#if 0
-    // Use FQNs when things are referenced, not when they are defined
-    if (xml_attrs["name"].value[0] != '/')
-    enum_def_path = top_group()->FQN() + enum_def_path;
-#endif
     enum_def()->set_name(enum_def_path);
     enum_def()->set_type(t);
 
@@ -858,23 +853,7 @@ void DmrppParserSax2::dmr_start_element(void *p, const xmlChar *l, const xmlChar
         // Ingest the dmrpp:chunks element and it attributes
         if (strcmp(localname, "chunks") == 0) {
             if (parser->debug()) cerr << "Inside HDF4 chunks element. localname: " << localname << endl;
-#if 0
-            // This bit of magic sets the URL used to get the data and it's
-            // magic in part because it may be a file or an http URL
-            unsigned int deflate_level = 0;
 
-            if (parser->check_attribute("deflate_level")) {
-                istringstream deflate_level_ss(parser->xml_attrs["deflate_level"].value);
-                deflate_level_ss >> deflate_level;
-                dc->set_deflate_level(deflate_level);
-                if (parser->debug()) cerr << "Processed attribute 'deflate_level=\"" << deflate_level << "\"'" << endl;
-            }
-            else {
-                if (parser->debug())
-                    cerr << "There was no 'deflate_level' attribute associated with the variable '" << bt->type_name()
-                        << " " << bt->name() << "'" << endl;
-            }
-#endif
             if (parser->check_attribute("compressionType")) {
                 string compression_type_string(parser->xml_attrs["compressionType"].value);
                 dc->ingest_compression_type(compression_type_string);
@@ -919,12 +898,11 @@ void DmrppParserSax2::dmr_start_element(void *p, const xmlChar *l, const xmlChar
                 if (parser->debug()) cerr << "default_catalog name '" << defcatname << "'" << endl;
                 BESCatalog *defcat = BESCatalogList::TheCatalogList()->find_catalog(defcatname);
                 if (!defcat) {
-                    // Not catalog. So we print something in debug but otherwise do nothing.
-                    string err = (string) "Not able to find the default catalog '" + defcatname + "'";
-                    if (parser->debug()) cerr << err << "'" << endl;
+                    // No default catalog. So we print something in debug but otherwise do nothing.
+                    if (parser->debug()) cerr << "Not able to find the default catalog '" << defcatname << "'" << endl;
                 }
                 else {
-                    // Yay! We found the catalog so we get the root dir
+                    // Yay! We found the default catalog so we get the root dir
                     // and make a file URL.
                     BESCatalogUtils *utils = BESCatalogUtils::Utils(defcat->get_catalog_name());
                     if (parser->debug())
@@ -938,10 +916,7 @@ void DmrppParserSax2::dmr_start_element(void *p, const xmlChar *l, const xmlChar
 
             unsigned long long offset = 0;
             unsigned long long size = 0;
-#if 0
-            string md5("");
-            string uuid("");
-#endif
+
             string chunk_position_in_array("");
 
             if (parser->check_required_attribute("offset")) {
@@ -961,27 +936,6 @@ void DmrppParserSax2::dmr_start_element(void *p, const xmlChar *l, const xmlChar
             else {
                 dmr_error(parser, "The hdf:byteStream element is missing the required attribute 'size'.");
             }
-
-#if 0
-            if (parser->check_required_attribute("md5")) {
-                istringstream md5_ss(parser->xml_attrs["md5"].value);
-                md5 = md5_ss.str();
-                if (parser->debug()) cerr << "Found attribute 'md5' value: " << md5_ss.str() << endl;
-
-            }
-            else {
-                if (parser->debug()) cerr << "No attribute 'md5' located" << endl;
-            }
-
-            if (parser->check_required_attribute("uuid")) {
-                istringstream uuid_ss(parser->xml_attrs["uuid"].value);
-                uuid = uuid_ss.str();
-                if (parser->debug()) cerr << "Found attribute 'uuid' value: " << uuid_ss.str() << endl;
-            }
-            else {
-                if (parser->debug()) cerr << "No attribute 'uuid' located" << endl;
-            }
-#endif
 
             if (parser->check_attribute("chunkPositionInArray")) {
                 istringstream chunk_position_ss(parser->xml_attrs["chunkPositionInArray"].value);
@@ -1532,8 +1486,6 @@ void DmrppParserSax2::intern(const char *buffer, int size, DMR *dest_dmr, bool d
     push_state(parser_start);
     context = xmlCreatePushParserCtxt(&ddx_sax_parser, this, buffer, size, "stream");
     context->validate = true;
-    //push_state(parser_start);
-    //xmlParseChunk(context, buffer, size, 0);
 
     // This call ends the parse.
     xmlParseChunk(context, buffer, 0, 1/*terminate*/);
