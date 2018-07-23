@@ -72,13 +72,6 @@ void BESCatalogResponseHandler::execute(BESDataHandlerInterface &dhi)
     BESStopWatch sw;
     if (BESISDEBUG(TIMING_LOG)) sw.start("BESCatalogResponseHandler::execute", dhi.data[REQUEST_ID]);
 
-    string defcatname = BESCatalogList::TheCatalogList()->default_catalog_name();
-    BESCatalog *defcat = BESCatalogList::TheCatalogList()->find_catalog(defcatname);
-    if (!defcat) {
-        string err = (string) "Not able to find the default catalog '" + defcatname + "'";
-        throw BESInternalError(err, __FILE__, __LINE__);
-    }
-
     // This is the object used to build the response the showCatalog command will return
     BESInfo *info = BESInfoList::TheList()->build_info();
     d_response_object = info;
@@ -130,6 +123,13 @@ void BESCatalogResponseHandler::execute(BESDataHandlerInterface &dhi)
         entry = catobj->show_catalog(container, /*coi,*/entry);
     }
     else {
+        string defcatname = BESCatalogList::TheCatalogList()->default_catalog_name();
+        BESCatalog *defcat = BESCatalogList::TheCatalogList()->find_catalog(defcatname);
+        if (!defcat) {
+            string err = (string) "Not able to find the default catalog '" + defcatname + "'";
+            throw BESInternalError(err, __FILE__, __LINE__);
+        }
+
         // we always want to get the container information from the
         // default catalog, whether the node is / or not
         entry = defcat->show_catalog(container, /*coi,*/entry);
