@@ -31,6 +31,7 @@
 //      jgarcia     Jose Garcia <jgarcia@ucar.edu>
 
 #include <fstream>
+#include <jni.h>
 
 using std::ofstream ;
 using std::ifstream ;
@@ -54,6 +55,7 @@ private:
 public:
     				StandAloneApp() ;
     virtual			~StandAloneApp() ;
+    JNIEXPORT void	JNICALL Java_StandAloneApp(JNIEnv *, jobject);
     virtual int			initialize( int argC, char **argV ) ;
     virtual int			run() ;
     virtual int			terminate( int sig = 0 ) ;

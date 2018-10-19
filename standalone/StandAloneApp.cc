@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <signal.h>
+#include <jni.h>
 
 #include <iostream>
 #include <string>
@@ -73,6 +74,12 @@ StandAloneApp::~StandAloneApp()
     BESCatalogUtils::delete_all_catalogs();
 #endif
 
+}
+
+JNIEXPORT void Java_StandAloneApp_sayHello(JNIEnv *env, jobject thisObj)
+{
+	cout << "Hello World fomr C++!" << endl;
+	return;
 }
 
 void StandAloneApp::showVersion()
@@ -337,7 +344,7 @@ void StandAloneApp::dump(ostream &strm) const
     BESApp::dump(strm);
     BESIndent::UnIndent();
 }
-
+#if 1
 int main(int argc, char **argv)
 {
     try {
@@ -357,4 +364,4 @@ int main(int argc, char **argv)
         return 3;
     }
 }
-
+#endif
