@@ -12,7 +12,7 @@ ACLOCAL_AMFLAGS = -I conf
 M_NAME=httpd_catalog_module
 M_VER=0.9.0
 
-AM_CPPFLAGS = -I$(top_srcdir)/dispatch -I$(top_srcdir)/dap $(DAP_CFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)/dispatch -I$(top_srcdir)/dap -I$(top_srcdir)/xmlcommand $(DAP_CFLAGS)
 LIBADD = $(DAP_SERVER_LIBS) $(DAP_CLIENT_LIBS)
 
 AM_CPPFLAGS += -DMODULE_NAME=\"$(M_NAME)\" -DMODULE_VERSION=\"$(M_VER)\"
@@ -31,13 +31,13 @@ libhttpd_catalog_module_la_LIBADD = $(LIBADD)
 HTTP_CAT_SRC = HttpdCatalogModule.cc HttpdCatalogUtils.cc HttpdCatalog.cc \
 	HttpdCatalogContainer.cc HttpdCatalogContainerStorage.cc \
 	curl_utils.cc RemoteHttpResourceCache.cc RemoteHttpResource.cc \
-	HttpdDirScraper.cc
+	HttpdDirScraper.cc ThreddsCatalogReader.cc
 	
 HTTP_CAT_HDR = HttpdCatalogError.h  HttpdCatalog.h  HttpdCatalogNames.h \
 	HttpdCatalogModule.h HttpdCatalogUtils.h HttpdCatalogNames.h \
 	HttpdCatalogContainer.h HttpdCatalogContainerStorage.h \
 	curl_utils.h RemoteHttpResourceCache.h RemoteHttpResource.h \
-	HttpdDirScraper.h 
+	HttpdDirScraper.h ThreddsCatalogReader.h
 
 EXTRA_DIST = data httpd_catalog.conf.in 
 

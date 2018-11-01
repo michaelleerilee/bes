@@ -24,9 +24,10 @@
 // You can contact OPeNDAP, Inc. at PO Box 112, Saunderstown, RI. 02874-0112.
 
 
-#ifndef MODULES_HTTP_CATALOG_HTTPDDIRSCRAPER_H_
-#define MODULES_HTTP_CATALOG_HTTPDDIRSCRAPER_H_
+#ifndef M_httpdd_catalog_ThreddsCatalogReader_H_
+#define M_httpdd_catalog_ThreddsCatalogReader_H_
 
+#include <map>
 #include <set>
 #include <string>
 #include <CatalogNode.h>
@@ -42,22 +43,15 @@ namespace httpd_catalog {
  * in "/". Links that end in other characters are assumed to be links to "leaves".
  *
  */
-class HttpdDirScraper {
+class ThreddsCatalogReader {
 private:
-    map<string,int> d_months;
-
-    int getNextElementText(const string &page_str, string element_name, int startIndex, string &resultText, bool trim=true) const;
-    void createHttpdDirectoryPageMap(std::string url, std::map<std::string, bes::CatalogItem *> &items) const;
-    long get_size_val(const string size_str) const;
-    string httpd_time_to_iso_8601(const string httpd_time) const;
-    string show_tm_struct(const tm tms) const;
-    void zero_tm_struct(tm &tms) const;
+    void ingestThreddsCatalog(std::string url, std::map<std::string, bes::CatalogItem *> &items) const;
 
 public:
-    HttpdDirScraper();
-    ~HttpdDirScraper() { }
-    virtual bes::CatalogNode *get_node(const string &url, const string &path) const;
+    ThreddsCatalogReader();
+    virtual ~ThreddsCatalogReader() { }
+    virtual bes::CatalogNode *get_node(const std::string &url, const std::string &path) const;
 };
 } // namespace httpd_catalog
 
-#endif /* MODULES_HTTP_CATALOG_HTTPDDIRSCRAPER_H_ */
+#endif /* M_httpdd_catalog_ThreddsCatalogReader_H_ */

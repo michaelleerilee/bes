@@ -115,7 +115,7 @@ long HttpdDirScraper::get_size_val(const string size_str) const
 /**
  * @ brief Make a string of a tm struct (time structure) value;
  */
-string show_tm_struct(const tm tms)
+string HttpdDirScraper::show_tm_struct(const tm tms) const
 {
    stringstream ss;
    ss << "tm_sec:   " << tms.tm_sec << endl;
@@ -133,7 +133,8 @@ string show_tm_struct(const tm tms)
 /**
  * @brief Zero a tm struct
  */
-void zero_tm_struct(tm &tms){
+void HttpdDirScraper::zero_tm_struct(tm &tms) const
+{
     tms.tm_sec = 0;
     tms.tm_min = 0;
     tms.tm_hour = 0;

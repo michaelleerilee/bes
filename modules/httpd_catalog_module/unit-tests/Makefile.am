@@ -2,11 +2,12 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-AM_CPPFLAGS = -I$(top_srcdir)/modules -I$(top_srcdir)/modules/cmr_module \
+AM_CPPFLAGS = -I$(top_srcdir)/modules -I$(top_srcdir)/modules/cmr_module -I ${top_srcdir}/xmlcommand \
 -I$(top_srcdir)/dispatch -I$(top_srcdir)/dap $(DAP_CFLAGS)
 
 # Added -lz for ubuntu
 LIBADD = -L../../../dispatch/.libs -lbes_dispatch $(BES_DISPATCH_LIB) $(BES_DAP_LIB) $(BES_EXTRA_LIBS) \
+ -L${top_builddir}/xmlcommand -lbes_xml_command \
 $(DAP_SERVER_LIBS) $(DAP_CLIENT_LIBS) -lz
 
 if CPPUNIT
@@ -80,7 +81,7 @@ $(abs_builddir)/static-cache:
 #
 
 if CPPUNIT
-UNIT_TESTS = HttpdDirScraperTest RemoteHttpResourceTest
+UNIT_TESTS = HttpdDirScraperTest RemoteHttpResourceTest ThreddsCatalogReaderTest
 else
 UNIT_TESTS =
 
@@ -97,11 +98,15 @@ clean-local:
 	test ! -d $(builddir)/static-cache || rm -rf $(builddir)/static-cache
 
 OBJS = ../RemoteHttpResource.o ../curl_utils.o ../RemoteHttpResourceCache.o \
-       ../HttpdCatalogUtils.o ../HttpdDirScraper.o ../HttpdCatalog.o  
+       ../HttpdCatalogUtils.o ../HttpdDirScraper.o ../HttpdCatalog.o  \
+       ../ThreddsCatalogReader.o
 
 HttpdDirScraperTest_SOURCES = HttpdDirScraperTest.cc
 HttpdDirScraperTest_LDADD = $(OBJS) $(LIBADD)
 
 RemoteHttpResourceTest_SOURCES = RemoteHttpResourceTest.cc
 RemoteHttpResourceTest_LDADD = $(OBJS) $(LIBADD)
+
+ThreddsCatalogReaderTest_SOURCES = ThreddsCatalogReaderTest.cc
+ThreddsCatalogReaderTest_LDADD = $(OBJS) $(LIBADD)
 
