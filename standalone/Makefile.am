@@ -31,11 +31,11 @@ lib_bes_LTLIBRARIES = libbes_standalone.la
 #	StandAloneApp.h \
 #	StandAloneClient.h
 
-STANDALONE_SRCS = StandAloneApp.cc \
-	StandAloneClient.cc 
+STANDALONE_SRCS = StandAloneApp.cc StandAloneAppJNI.cc
+#	StandAloneClient.cc 
 
-STANDALONE_HDRS = StandAloneApp.h \
-	StandAloneClient.h
+STANDALONE_HDRS = StandAloneApp.h StandAloneAppJNI.h
+#	StandAloneClient.h
 
 # 			../cmdln/CmdTranslation.cc \
 #			../cmdln/CmdTranslation.h \
@@ -46,6 +46,7 @@ libbes_standalone_la_CPPFLAGS = $(XML2_CFLAGS) $(AM_CPPFLAGS)
 libbes_standalone_la_SOURCES = $(STANDALONE_SRCS) $(STANDALONE_HDRS)
 libbes_standalone_la_LDFLAGS = -avoid-version -module
 libbes_standalone_la_LIBADD = $(DAP_LIBS) $(LIBS)
+#libbes_standalone_la_LIBADD = $(top_builddir)/dispatch/libbes_dispatch.la $(top_builddir)/xmlcommand/libbes_xml_command.la $(XML2_LIBS) $(DAP_LIBS) $(LIBS)
 
 #besstandalone_CPPFLAGS = $(XML2_CFLAGS) $(AM_CPPFLAGS)
 ## Added libbes_dap.la jhrg 12/24/12 so besstandalone can call BESCatalogUtils::delete_all_catalogs()
