@@ -55,7 +55,7 @@ using bes::CatalogItem;
 
 #define DATASET "dataset"
 #define SERVICE "service"
-#define CATALOG_REF "catalog_ref"
+#define CATALOG_REF "catalogRef"
 #define DATA_SIZE "dataSize"
 #define DATE "date"
 #define ACCESS "access"
@@ -68,16 +68,13 @@ using bes::CatalogItem;
 #define ID "ID"
 #define SERVICE_TYPE "serviceType"
 #define BASE "base"
-
-
-
+#define NAME "name"
 
 namespace httpd_catalog {
 
 ThreddsCatalogReader::ThreddsCatalogReader()
 {
 }
-
 
 string showProperties(const map<string, string> &eProps){
     stringstream ss;
@@ -89,27 +86,151 @@ string showProperties(const map<string, string> &eProps){
     return ss.str();
 }
 
-void traverse_dataset(xmlNode *parentDataset){
-    string eName, eValue;
-    map<string, string> eProps;
-    xmlNode *lastElement = parentDataset;
-    xmlNode *thisElement = BESXMLUtils::GetFirstChild(parentDataset, eName, eValue, eProps);
-
-    BESDEBUG(MODULE, "name: " << eName << " value:" << eValue  << " attrs: " << showProperties(eProps) << endl);
-   if(thisElement == parentDataset){
-        throw BESSyntaxUserError("THREDDS Catalog must actually have content.", __FILE__, __LINE__);
+CatalogItem *get_catalog_ref_node(map<string, string> &eProps){
+    std::map<string,string>::iterator pit;
+    string id(""), href(""), name(""), title(""), type("");
+    // name: catalogRef value: attrs: ID="/opendap/hyrax/nwa_catalog/" href="nwa_catalog/catalog.xml" name="nwa_catalog" title="nwa_catalog" type="simple"
+    pit = eProps.find(ID);
+    if(pit!= eProps.end()){
+        id = pit->second;
     }
-
-    while(lastElement != thisElement){
-        lastElement = thisElement;
-        thisElement = BESXMLUtils::GetNextChild(lastElement, eName, eValue, eProps);
-        BESDEBUG(MODULE, "name: " << eName << " value:" << eValue  << " attrs: " << showProperties(eProps) << endl);
-        if(eName == DATASET){
-            traverse_dataset(thisElement);
-        }
+    pit = eProps.find(HREF);
+    if(pit!= eProps.end()){
+        href = pit->second;
     }
+    pit = eProps.find(NAME);
+    if(pit!= eProps.end()){
+        name = pit->second;
+    }
+    pit = eProps.find(TITLE);
+    if(pit!= eProps.end()){
+        title = pit->second;
+    }
+    pit = eProps.find(TYPE);
+    if(pit!= eProps.end()){
+        type = pit->second;
+    }
+    BESDEBUG(MODULE, prolog << "Processing catalogRef (node). id: '" << id << "' "<< "href: '" << href << "' "<< "name: '" << name << "' "<< "title: '" << title << "' "<< "type: '" << type << "' "<< endl);
+
+    CatalogItem *catalogRef_node = new CatalogItem();
+    catalogRef_node->set_type(CatalogItem::node);
+    catalogRef_node->set_name(href);
+
+    // FIXME: Find the Last Modified date? Head??
+    catalogRef_node->set_lmt(BESUtil::get_time(true));
+
+    return catalogRef_node;
 }
 
+
+
+/**
+ *
+
+ name: 'dataset' value: '' attrs: 'ID="/opendap/hyrax/test-304.html" href="test/catalog.xml" name="test-304.html" title="test" type="simple" '
+ Processing dataset...
+ name: 'dataSize' value: '343' attrs: 'units="bytes" '
+ name: 'date' value: '2005-07-13T19:32:26' attrs: 'type="modified" units="bytes" '
+ name: 'access' value: '2005-07-13T19:32:26' attrs: 'serviceName="file" type="modified" units="bytes" urlPath="/test-304.html" '
+ name: 'access' value: '2005-07-13T19:32:26' attrs: 'serviceName="file" type="modified" units="bytes" urlPath="/test-304.html" '
+ name: 'access' value: '2005-07-13T19:32:26' attrs: 'serviceName="file" type="modified" units="bytes" urlPath="/test-304.html" '
+ *
+ */
+CatalogItem *get_dataset_leaf(xmlNode *datasetElement, map<string, string> &eProps){
+    std::map<string,string>::iterator pit;
+    string id(""), href(""), name(""), title(""), type(""), urlPath("");
+    // name: catalogRef value: attrs: ID="/opendap/hyrax/nwa_catalog/" href="nwa_catalog/catalog.xml" name="nwa_catalog" title="nwa_catalog" type="simple"
+    pit = eProps.find(ID);
+    if(pit!= eProps.end()){
+        id = pit->second;
+    }
+    pit = eProps.find(HREF);
+    if(pit!= eProps.end()){
+        href = pit->second;
+    }
+    pit = eProps.find(NAME);
+    if(pit!= eProps.end()){
+        name = pit->second;
+    }
+    pit = eProps.find(TITLE);
+    if(pit!= eProps.end()){
+        title = pit->second;
+    }
+    pit = eProps.find(TYPE);
+    if(pit!= eProps.end()){
+        type = pit->second;
+    }
+    pit = eProps.find(URL_PATH);
+    if(pit!= eProps.end()){
+        urlPath = pit->second;
+    }
+
+
+    BESDEBUG(MODULE, prolog << "Processing dataset (leaf). "
+        << "id: '" << id << "' "
+        << "href: '" << href << "' "
+        << "name: '" << name << "' "
+        << "title: '" << title << "' "
+        << "type: '" << type << "' "
+        << "urlPath: '" << urlPath << "' "
+        << endl);
+
+    CatalogItem *catalogRef_node = new CatalogItem();
+    catalogRef_node->set_type(CatalogItem::leaf);
+    catalogRef_node->set_name(href);
+
+    // FIXME: Find the Last Modified date? Head??
+    catalogRef_node->set_lmt(BESUtil::get_time(true));
+
+    return catalogRef_node;
+}
+
+
+
+void traverse_dataset(
+    xmlNode *datasetElement,
+    string dataset_name,
+    string dataset_value,
+    map<string,string> dataset_props,
+    std::map<std::string, bes::CatalogItem *> &items
+    ){
+    string eName, eValue;
+    map<string, string> eProps;
+    std::map<string,string>::iterator pit;
+
+
+
+
+
+    //
+    eName = DATASET;
+    xmlNode *childElement = BESXMLUtils::GetChild(datasetElement, eName, eValue, eProps);
+    if(childElement != NULL){
+            // We have child datasets so we do that.
+        xmlNode *lastElement = datasetElement;
+        childElement = BESXMLUtils::GetFirstChild(datasetElement, eName, eValue, eProps);
+        while(childElement != lastElement){
+            BESDEBUG(MODULE, prolog << "Processing name: '" << eName << "' value: '" << eValue  << "' attrs: '" << showProperties(eProps) << "'"<< endl);
+
+            if(eName == DATASET){
+                BESDEBUG(MODULE, prolog << "Processing dataset..." << endl);
+                traverse_dataset(childElement, eName, eValue, eProps, items);
+            }
+            else if(eName == CATALOG_REF){
+                CatalogItem *catalogRef_node = get_catalog_ref_node(eProps);
+                items.insert(pair<string,CatalogItem*>(catalogRef_node->get_name(),catalogRef_node));
+            }
+
+            lastElement = childElement;
+            childElement = BESXMLUtils::GetNextChild(lastElement, eName, eValue, eProps);
+      }
+    }
+    else {
+        CatalogItem *dataset_leaf = get_dataset_leaf(datasetElement,dataset_props);
+        items.insert(pair<string,CatalogItem*>(dataset_leaf->get_name(),dataset_leaf));
+    }
+
+}
 
 
 
@@ -193,18 +314,36 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
         xmlNode *lastElement = root_element;
         xmlNode *thisElement = BESXMLUtils::GetFirstChild(root_element, eName, eValue, eProps);
 
-        BESDEBUG(MODULE, "name: " << eName << " value:" << eValue  << " attrs: " << showProperties(eProps) << endl);
+        BESDEBUG(MODULE, prolog << "name: " << eName << " value:" << eValue  << " attrs: " << showProperties(eProps) << endl);
        if(thisElement == root_element){
             throw BESSyntaxUserError("THREDDS Catalog must actually have content.", __FILE__, __LINE__);
         }
 
+
+
+       vector<BesXmlElement *> services;
+       BESXMLUtils::GetChildren(root_element,SERVICE,services);
+       vector<BesXmlElement *>::iterator srvIt = services.begin();
+       while(srvIt!=services.end()){
+           BESDEBUG(MODULE, prolog << (*srvIt)->to_string() << showProperties(eProps) << endl);
+           srvIt++;
+       }
+
+
+
+
         while(lastElement != thisElement){
             lastElement = thisElement;
             thisElement = BESXMLUtils::GetNextChild(lastElement, eName, eValue, eProps);
-            BESDEBUG(MODULE, "name: " << eName << " value:" << eValue  << " attrs: " << showProperties(eProps) << endl);
+            BESDEBUG(MODULE, prolog << "name: " << eName << " value:" << eValue  << " attrs: " << showProperties(eProps) << endl);
             if(eName == DATASET){
-                traverse_dataset(thisElement);
+                traverse_dataset(thisElement, eName, eValue, eProps, items);
             }
+            else if(eName == CATALOG_REF){
+                CatalogItem *catalogRef_node = get_catalog_ref_node(eProps);
+                items.insert(pair<string,CatalogItem*>(catalogRef_node->get_name(),catalogRef_node));
+            }
+
         }
 
 

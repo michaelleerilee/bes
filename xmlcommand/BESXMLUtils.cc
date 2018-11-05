@@ -209,3 +209,32 @@ BESXMLUtils::GetChild(xmlNode *node, const string &child_name, string &child_val
     return child_node;
 }
 
+
+
+/** @brief get the element child node of the given node with the given name
+ *
+ * @param node the xml node to get the named child node for
+ * @param child_name name of the child element node to get
+ * @param child_value parameter to store the value, if any, of the named child
+ * @param child_props parameter to store any properties of the named child
+ */
+void BESXMLUtils::GetChildren(xmlNode *node, const string &child_name, vector<BesXmlElement *> &children)
+{
+    xmlNode *child_node = NULL;
+    if (node) {
+        child_node = node->children;
+        while (child_node) {
+            if (child_node->type == XML_ELEMENT_NODE) {
+                string name = (char *) child_node->name;
+                BESUtil::removeLeadingAndTrailingBlanks(name);
+                if (name == child_name) {
+                    BesXmlElement *bse = new BesXmlElement();
+                    BESXMLUtils::GetNodeInfo(child_node, bse->name, bse->value, bse->attributes);
+                    children.push_back(bse);
+                }
+            }
+            child_node = child_node->next;
+        }
+    }
+}
+
