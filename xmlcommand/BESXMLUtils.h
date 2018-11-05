@@ -44,23 +44,6 @@ using std::string;
 
 #include <libxml/encoding.h>
 
-class BesXmlElement {
-public:
-    string name;
-    string value;
-    map<string, string> attributes;
-
-    std::string to_string(){
-        std::stringstream ss;
-        ss << "BesXmlElement - name: '" << name << "' value: '" << value  << "' attrs: '";
-        map<string, string>::const_iterator it = attributes.begin();
-        while(it != attributes.end()){
-            ss << it->first << "=\"" << it->second << "\" ";
-            it++;
-        }
-        return ss.str();
-    }
-};
 
 class BESXMLUtils {
 private:
@@ -77,7 +60,8 @@ public:
         map<string, string> &next_props);
     static xmlNode * GetChild(xmlNode *node, const string &child_name, string &child_value,
         map<string, string> &child_props);
-    static void GetChildren(xmlNode *node, const string &child_name, vector<BesXmlElement *> &children);
+    static void GetChildren(xmlNode *node, const string &child_name, vector<xmlNode *> &children);
+    static void GetDescendants(xmlNode *node, const string &descendant_name, vector<xmlNode *> &descendants);
 
 };
 

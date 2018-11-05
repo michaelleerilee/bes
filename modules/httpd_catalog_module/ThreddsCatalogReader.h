@@ -30,10 +30,41 @@
 #include <map>
 #include <set>
 #include <string>
+#include <sstream>
 #include <CatalogNode.h>
 #include "HttpdCatalog.h"
 
 namespace httpd_catalog {
+
+class ThreddsService {
+public:
+    std::map<std::string, ThreddsService *> child_services;
+    std::string base;
+    std::string name;
+    std::string serviceType;
+
+    std::string show(){
+        std::stringstream ss;
+
+        ss<< "ThreddsService name: " << name;
+        if(child_services.empty()){
+            // It's a asimple service.
+            ss << " serviceType: " << serviceType;
+            ss << " base: " << base << endl;
+
+        }
+        else {
+            // It's a compound service
+            ss << endl;
+            std::map<std::string, ThreddsService *>::iterator it =  child_services.begin();
+            while(it != child_services.end()){
+                ss << it->second->show() ;
+            }
+        }
+        return ss.str();
+    }
+
+};
 
 /**
  * @brief This class knows how to scrape an httpd generated directory page and build a BES CatalogNode response
@@ -45,6 +76,7 @@ namespace httpd_catalog {
  */
 class ThreddsCatalogReader {
 private:
+    void getCatalogServices(xmlNode *lastElement, std::map<std::string, ThreddsService *> &services) const;
     void ingestThreddsCatalog(std::string url, std::map<std::string, bes::CatalogItem *> &items) const;
 
 public:

@@ -76,7 +76,21 @@ ThreddsCatalogReader::ThreddsCatalogReader()
 {
 }
 
-string showProperties(const map<string, string> &eProps){
+std::string xmlNodeToString(xmlNode *node){
+    std::stringstream ss;
+    string name, value;
+    map<string, string> attributes;
+    BESXMLUtils::GetNodeInfo(node, name, value, attributes);
+    ss << "xmlNode*: "<< node << " name: '" << name << "' value: '" << value  << "' attrs: '";
+    map<string, string>::const_iterator it = attributes.begin();
+    while(it != attributes.end()){
+        ss << it->first << "=\"" << it->second << "\" ";
+        it++;
+    }
+    return ss.str();
+}
+
+std::string showProperties(const map<string, string> &eProps){
     stringstream ss;
     map<string, string>::const_iterator it = eProps.begin();
     while(it != eProps.end()){
@@ -232,6 +246,63 @@ void traverse_dataset(
 
 }
 
+void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<std::string, ThreddsService *> &services) const
+{
+    vector<xmlNode *> child_services;
+    BESXMLUtils::GetChildren(startElement,SERVICE,child_services);
+
+    vector<xmlNode *>::iterator vit = child_services.begin();
+    while(vit!=child_services.end()){
+        xmlNode *srvc = *vit;
+        vector<xmlNode *> cmpnd_srvcs;
+        ThreddsService *thredds_srvc =  new ThreddsService();
+
+        BESXMLUtils::GetChildren(srvc,SERVICE,cmpnd_srvcs);
+        if(cmpnd_srvcs.size() != 0){
+            // This is a compound service
+            getCatalogServices(srvc,thredds_srvc->child_services);
+            services.insert(thredds_srvc->child_services.begin(),thredds_srvc->child_services.end());
+        }
+        else {
+            // It's just a simple service...
+            string name, value;
+            map<string, string> attributes;
+            map<string,string>::iterator mit;
+
+            BESXMLUtils::GetNodeInfo(srvc, name, value, attributes);
+
+            mit = attributes.find(BASE);
+            if (mit == attributes.end()){
+                string err = (string) "THREDDS service declaration is missing the required " + BASE + " attribute.";
+                BESDEBUG(MODULE, prolog << err << endl);
+                throw BESInternalError(err, __FILE__, __LINE__);
+            }
+            thredds_srvc->base = mit->second;
+
+            mit = attributes.find(NAME);
+            if (mit == attributes.end()){
+                string err = (string) "THREDDS service declaration is missing the required " + NAME + " attribute.";
+                BESDEBUG(MODULE, prolog << err << endl);
+                throw BESInternalError(err, __FILE__, __LINE__);
+            }
+            thredds_srvc->name = mit->second;
+
+            mit = attributes.find(SERVICE_TYPE);
+            if (mit == attributes.end()){
+                string err = (string) "THREDDS service declaration is missing the required " + SERVICE_TYPE + " attribute.";
+                BESDEBUG(MODULE, prolog << err << endl);
+                throw BESInternalError(err, __FILE__, __LINE__);
+            }
+            thredds_srvc->serviceType = mit->second;
+
+            services.insert(pair<string, ThreddsService *>(thredds_srvc->name,thredds_srvc));
+        }
+        vit++;
+    }
+}
+
+
+
 
 
 /**
@@ -261,7 +332,7 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
     stringstream buffer;
     buffer << t.rdbuf();
     string catalog_str = buffer.str();
-    BESDEBUG(MODULE, "Read catalog: " << endl << catalog_str << endl);
+    BESDEBUG(MODULE, prolog << "Read catalog: " << endl << catalog_str << endl);
 
 
     xmlDoc *doc = NULL;
@@ -314,24 +385,57 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
         xmlNode *lastElement = root_element;
         xmlNode *thisElement = BESXMLUtils::GetFirstChild(root_element, eName, eValue, eProps);
 
-        BESDEBUG(MODULE, prolog << "name: " << eName << " value:" << eValue  << " attrs: " << showProperties(eProps) << endl);
+        BESDEBUG(MODULE, prolog << "FIRST CHILD ELEMENT - " << xmlNodeToString(thisElement) << endl);
        if(thisElement == root_element){
             throw BESSyntaxUserError("THREDDS Catalog must actually have content.", __FILE__, __LINE__);
         }
 
 
-
-       vector<BesXmlElement *> services;
-       BESXMLUtils::GetChildren(root_element,SERVICE,services);
-       vector<BesXmlElement *>::iterator srvIt = services.begin();
-       while(srvIt!=services.end()){
-           BESDEBUG(MODULE, prolog << (*srvIt)->to_string() << showProperties(eProps) << endl);
-           srvIt++;
+       BESDEBUG(MODULE, prolog << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
+       std::map<std::string, ThreddsService *> services;
+       std::map<std::string, ThreddsService *>::iterator sit;
+       getCatalogServices(root_element,services);
+       sit = services.begin();
+       while(sit != services.end()){
+           ThreddsService *tsrvc = sit->second;
+           BESDEBUG(MODULE, prolog << tsrvc->show() << endl);
+           sit++;
        }
 
 
 
 
+       vector<xmlNode *>::iterator xnIt;
+
+       BESDEBUG(MODULE, prolog << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
+       vector<xmlNode *> services_1;
+       BESXMLUtils::GetChildren(root_element,SERVICE,services_1);
+       xnIt = services_1.begin();
+       while(xnIt!=services_1.end()){
+           BESDEBUG(MODULE, prolog << xmlNodeToString(*xnIt) << endl);
+           xnIt++;
+       }
+
+       BESDEBUG(MODULE, prolog << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
+       vector<xmlNode *> datasets;
+       BESXMLUtils::GetDescendants(root_element,DATASET,datasets);
+       xnIt = datasets.begin();
+       while(xnIt!=datasets.end()){
+           BESDEBUG(MODULE, prolog << xmlNodeToString(*xnIt) << endl);
+           xnIt++;
+       }
+
+       BESDEBUG(MODULE, prolog << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
+       vector<xmlNode *> catalog_refs;
+       BESXMLUtils::GetDescendants(root_element,CATALOG_REF,catalog_refs);
+       xnIt = catalog_refs.begin();
+       while(xnIt!=catalog_refs.end()){
+           BESDEBUG(MODULE, prolog << xmlNodeToString(*xnIt) << endl);
+           xnIt++;
+       }
+       BESDEBUG(MODULE, prolog << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
+
+       /*
         while(lastElement != thisElement){
             lastElement = thisElement;
             thisElement = BESXMLUtils::GetNextChild(lastElement, eName, eValue, eProps);
@@ -346,7 +450,7 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
 
         }
 
-
+*/
 
 
 
@@ -412,7 +516,7 @@ bes::CatalogNode *ThreddsCatalogReader::get_node(const string &url, const string
         }
     }
     else {
-        // Otherwise wefigure it's a leaf aka "item" response.
+        // Otherwise we figure it's a leaf aka "item" response.
         const BESCatalogUtils *cat_utils = BESCatalogList::TheCatalogList()->find_catalog(BES_DEFAULT_CATALOG)->get_catalog_utils();
         std::vector<std::string> url_parts = BESUtil::split(url,'/',true);
         string leaf_name = url_parts.back();

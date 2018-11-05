@@ -211,14 +211,14 @@ BESXMLUtils::GetChild(xmlNode *node, const string &child_name, string &child_val
 
 
 
-/** @brief get the element child node of the given node with the given name
+/** @brief get the element child nodes of the given node with the given name
  *
  * @param node the xml node to get the named child node for
  * @param child_name name of the child element node to get
  * @param child_value parameter to store the value, if any, of the named child
  * @param child_props parameter to store any properties of the named child
  */
-void BESXMLUtils::GetChildren(xmlNode *node, const string &child_name, vector<BesXmlElement *> &children)
+void BESXMLUtils::GetChildren(xmlNode *node, const string &child_name, vector<xmlNode *> &children)
 {
     xmlNode *child_node = NULL;
     if (node) {
@@ -228,10 +228,35 @@ void BESXMLUtils::GetChildren(xmlNode *node, const string &child_name, vector<Be
                 string name = (char *) child_node->name;
                 BESUtil::removeLeadingAndTrailingBlanks(name);
                 if (name == child_name) {
-                    BesXmlElement *bse = new BesXmlElement();
-                    BESXMLUtils::GetNodeInfo(child_node, bse->name, bse->value, bse->attributes);
-                    children.push_back(bse);
+                    children.push_back(child_node);
                 }
+            }
+            child_node = child_node->next;
+        }
+    }
+}
+
+
+/** @brief get the element descendant node of the given node with the given name
+ *
+ * @param node the xml node to get the named child node for
+ * @param child_name name of the child element node to get
+ * @param child_value parameter to store the value, if any, of the named child
+ * @param child_props parameter to store any properties of the named child
+ */
+void BESXMLUtils::GetDescendants(xmlNode *node, const string &descendant_name, vector<xmlNode *> &descendants)
+{
+    xmlNode *child_node = NULL;
+    if (node) {
+        child_node = node->children;
+        while (child_node) {
+            if (child_node->type == XML_ELEMENT_NODE) {
+                string name = (char *) child_node->name;
+                BESUtil::removeLeadingAndTrailingBlanks(name);
+                if (name == descendant_name) {
+                    descendants.push_back(child_node);
+                }
+                GetDescendants(child_node,descendant_name,descendants);
             }
             child_node = child_node->next;
         }
