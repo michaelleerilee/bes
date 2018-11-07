@@ -15,6 +15,7 @@
 # Where we can go for stuff...
 Gateway.Whitelist=http://localhost
 Gateway.Whitelist+=http://test.opendap.org
+Gateway.Whitelist+=https://thredds.daac.ornl.gov
 
 # Configure dat cache
 HttpResourceCache.dir=@abs_top_builddir@/modules/httpd_catalog_module/unit-tests/static-cache

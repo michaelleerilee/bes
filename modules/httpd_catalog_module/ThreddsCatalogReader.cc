@@ -30,6 +30,9 @@
 #include <ctype.h> /* isalpha and isdigit */
 #include <time.h> /* mktime */
 
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+
 //#include "rapidxml-1.13/rapidxml.hpp"
 //#include "rapidxml-1.13/rapidxml_utils.hpp"
 //#include "rapidxml-1.13/rapidxml_print.hpp"
@@ -53,6 +56,7 @@ using bes::CatalogItem;
 
 #define prolog std::string("ThreddsCatalogReader::").append(__func__).append("() - ")
 
+#define CATALOG "catalog"
 #define DATASET "dataset"
 #define SERVICE "service"
 #define CATALOG_REF "catalogRef"
@@ -136,6 +140,128 @@ CatalogItem *get_catalog_ref_node(map<string, string> &eProps){
     return catalogRef_node;
 }
 
+xmlXPathObjectPtr get_node_set (xmlDocPtr doc, xmlNodePtr current_node,  xmlChar *xpath)
+{
+
+    xmlXPathContextPtr context;
+    xmlXPathObjectPtr result;
+
+    context = xmlXPathNewContext(doc);
+    if (context == NULL) {
+        BESDEBUG(MODULE, prolog << "Error in xmlXPathNewContext!" << endl;);
+        return NULL;
+    }
+    context->node = current_node;
+    result = xmlXPathEvalExpression(xpath, context);
+    xmlXPathFreeContext(context);
+    if (result == NULL) {
+        BESDEBUG(MODULE, prolog << "Error in xmlXPathEvalExpression!" << endl);
+        return NULL;
+    }
+    if(xmlXPathNodeSetIsEmpty(result->nodesetval)){
+        xmlXPathFreeObject(result);
+        BESDEBUG(MODULE, prolog << "No Results Found For XPath: "<< xpath << endl);
+        return NULL;
+    }
+    return result;
+}
+
+
+/**
+ * There are a number of ways a service element can be referenced by a dataset.
+ * When multiple references come into play for a given dataset, the following is
+ * the precedence for deciding on the default service to use with access methods:
+ * -# A child serviceName element (XPath: "./serviceName").
+ * -# A child serviceName element of a child metadata element (XPath: "./metadata/serviceName")
+ * -# [DEPRECATED] A dataset element's serviceName attribute (XPath: "@serviceName") [Deprecated: use a child serviceName element instead.]
+ * -# The serviceName element in an inherited metadata element of the closest ancestor dataset (XPath: the first item in the set given by "ancestor::dataset/metadata[@inherited=true]/serviceName")
+ * The service with the highest precedence is the "default" service for that dataset element.
+ *
+ */
+ThreddsService *get_default_service(
+    xmlDocPtr catalog_doc,
+    xmlNodePtr dataset_node,
+    std::map<std::string, ThreddsService *> &services
+    ){
+
+    xmlXPathObjectPtr results;
+
+    xmlChar *priority_1 = (xmlChar *) "./serviceName";
+    xmlChar *priority_2 = (xmlChar *) "./metadata/serviceName";
+    xmlChar *priority_3 = (xmlChar *) "@serviceName";
+    xmlChar *priority_4 = (xmlChar *) "ancestor::dataset/metadata[@inherited=true]/serviceName";
+
+
+    xmlChar *priority_0 = (xmlChar *) "/catalog/dataset/metadata/serviceName";
+    results = get_node_set(catalog_doc,dataset_node,priority_0);
+    if (results) {
+        xmlNodeSetPtr nodeset = results->nodesetval;
+        for (int i=0; i < nodeset->nodeNr; i++) {
+            xmlChar *keyword = xmlNodeListGetString(catalog_doc, nodeset->nodeTab[i]->xmlChildrenNode, 1);
+            BESDEBUG(MODULE, prolog << "keyword: " << keyword << endl);
+            xmlFree(keyword);
+        }
+        xmlXPathFreeObject (results);
+    }
+
+
+
+
+
+    results = get_node_set(catalog_doc,dataset_node,priority_1);
+    if (results) {
+        xmlNodeSetPtr nodeset = results->nodesetval;
+        for (int i=0; i < nodeset->nodeNr; i++) {
+            xmlChar *keyword = xmlNodeListGetString(catalog_doc, nodeset->nodeTab[i]->xmlChildrenNode, 1);
+            BESDEBUG(MODULE, prolog << "keyword: " << keyword << endl);
+            xmlFree(keyword);
+        }
+        xmlXPathFreeObject (results);
+    }
+
+    results = get_node_set(catalog_doc,dataset_node,priority_2);
+    if (results) {
+        xmlNodeSetPtr nodeset = results->nodesetval;
+        for (int i=0; i < nodeset->nodeNr; i++) {
+            xmlChar *keyword = xmlNodeListGetString(catalog_doc, nodeset->nodeTab[i]->xmlChildrenNode, 1);
+            BESDEBUG(MODULE, prolog << "keyword: " << keyword << endl);
+            xmlFree(keyword);
+        }
+        xmlXPathFreeObject (results);
+    }
+
+    results = get_node_set(catalog_doc,dataset_node,priority_3);
+    if (results) {
+        xmlNodeSetPtr nodeset = results->nodesetval;
+        for (int i=0; i < nodeset->nodeNr; i++) {
+            xmlChar *keyword = xmlNodeListGetString(catalog_doc, nodeset->nodeTab[i]->xmlChildrenNode, 1);
+            BESDEBUG(MODULE, prolog << "keyword: " << keyword << endl);
+            xmlFree(keyword);
+        }
+        xmlXPathFreeObject (results);
+    }
+
+    results = get_node_set(catalog_doc,dataset_node,priority_4);
+    if (results) {
+        xmlNodeSetPtr nodeset = results->nodesetval;
+        for (int i=0; i < nodeset->nodeNr; i++) {
+            xmlChar *keyword = xmlNodeListGetString(catalog_doc, nodeset->nodeTab[i]->xmlChildrenNode, 1);
+            BESDEBUG(MODULE, prolog << "keyword: " << keyword << endl);
+            xmlFree(keyword);
+        }
+        xmlXPathFreeObject (results);
+    }
+
+
+    return 0;
+}
+
+
+
+
+
+
+
 
 
 /**
@@ -150,32 +276,36 @@ CatalogItem *get_catalog_ref_node(map<string, string> &eProps){
  name: 'access' value: '2005-07-13T19:32:26' attrs: 'serviceName="file" type="modified" units="bytes" urlPath="/test-304.html" '
  *
  */
-CatalogItem *get_dataset_leaf(xmlNode *datasetElement, map<string, string> &eProps){
+CatalogItem *get_dataset_leaf(xmlNode *datasetElement){
+    string eName(""), eValue("");
+    map<string, string> attributes;
+    BESXMLUtils::GetNodeInfo(datasetElement, eName, eValue, attributes);
+
     std::map<string,string>::iterator pit;
     string id(""), href(""), name(""), title(""), type(""), urlPath("");
     // name: catalogRef value: attrs: ID="/opendap/hyrax/nwa_catalog/" href="nwa_catalog/catalog.xml" name="nwa_catalog" title="nwa_catalog" type="simple"
-    pit = eProps.find(ID);
-    if(pit!= eProps.end()){
+    pit = attributes.find(ID);
+    if(pit!= attributes.end()){
         id = pit->second;
     }
-    pit = eProps.find(HREF);
-    if(pit!= eProps.end()){
+    pit = attributes.find(HREF);
+    if(pit!= attributes.end()){
         href = pit->second;
     }
-    pit = eProps.find(NAME);
-    if(pit!= eProps.end()){
+    pit = attributes.find(NAME);
+    if(pit!= attributes.end()){
         name = pit->second;
     }
-    pit = eProps.find(TITLE);
-    if(pit!= eProps.end()){
+    pit = attributes.find(TITLE);
+    if(pit!= attributes.end()){
         title = pit->second;
     }
-    pit = eProps.find(TYPE);
-    if(pit!= eProps.end()){
+    pit = attributes.find(TYPE);
+    if(pit!= attributes.end()){
         type = pit->second;
     }
-    pit = eProps.find(URL_PATH);
-    if(pit!= eProps.end()){
+    pit = attributes.find(URL_PATH);
+    if(pit!= attributes.end()){
         urlPath = pit->second;
     }
 
@@ -200,51 +330,114 @@ CatalogItem *get_dataset_leaf(xmlNode *datasetElement, map<string, string> &ePro
 }
 
 
-
+/**
+ * Process a dataset element
+ */
 void traverse_dataset(
-    xmlNode *datasetElement,
-    string dataset_name,
-    string dataset_value,
-    map<string,string> dataset_props,
+    xmlDocPtr catalog_doc,
+    xmlNodePtr datasetElement,
+    std::map<std::string, ThreddsService *> &services,
     std::map<std::string, bes::CatalogItem *> &items
     ){
     string eName, eValue;
-    map<string, string> eProps;
+    map<string, string> attributes;
     std::map<string,string>::iterator pit;
-
-
-
 
 
     //
     eName = DATASET;
-    xmlNode *childElement = BESXMLUtils::GetChild(datasetElement, eName, eValue, eProps);
+    xmlNode *childElement = BESXMLUtils::GetChild(datasetElement, eName, eValue, attributes);
     if(childElement != NULL){
-            // We have child datasets so we do that.
+        // We have child datasets so we do that.
         xmlNode *lastElement = datasetElement;
-        childElement = BESXMLUtils::GetFirstChild(datasetElement, eName, eValue, eProps);
+        attributes.clear();
+        childElement = BESXMLUtils::GetFirstChild(datasetElement, eName, eValue, attributes);
         while(childElement != lastElement){
-            BESDEBUG(MODULE, prolog << "Processing name: '" << eName << "' value: '" << eValue  << "' attrs: '" << showProperties(eProps) << "'"<< endl);
+            BESDEBUG(MODULE, prolog << "Processing " << xmlNodeToString(childElement) << endl);
 
             if(eName == DATASET){
-                BESDEBUG(MODULE, prolog << "Processing dataset..." << endl);
-                traverse_dataset(childElement, eName, eValue, eProps, items);
+                BESDEBUG(MODULE, prolog << "Recursive call for dataset traversal" << endl);
+                traverse_dataset(catalog_doc, childElement, services, items);
             }
             else if(eName == CATALOG_REF){
-                CatalogItem *catalogRef_node = get_catalog_ref_node(eProps);
+               CatalogItem *catalogRef_node = get_catalog_ref_node(attributes);
                 items.insert(pair<string,CatalogItem*>(catalogRef_node->get_name(),catalogRef_node));
             }
 
+            ThreddsService *service = get_default_service(catalog_doc, childElement, services);
+
+
             lastElement = childElement;
-            childElement = BESXMLUtils::GetNextChild(lastElement, eName, eValue, eProps);
-      }
+            attributes.clear();
+            childElement = BESXMLUtils::GetNextChild(lastElement, eName, eValue, attributes);
+        }
     }
     else {
-        CatalogItem *dataset_leaf = get_dataset_leaf(datasetElement,dataset_props);
+        // No child datasets so this is a leaf dataset.
+        ThreddsService *service = get_default_service(catalog_doc, datasetElement, services);
+        CatalogItem *dataset_leaf = get_dataset_leaf(datasetElement);
         items.insert(pair<string,CatalogItem*>(dataset_leaf->get_name(),dataset_leaf));
     }
 
 }
+
+#if 0
+void getDatasetsAsItem(xmlNode *startElement, vector<CatalogItem *> dataset_items){
+
+    vector<xmlNode *>::iterator xnIt;
+
+
+    BESDEBUG(MODULE, prolog << "BEGIN - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
+    vector<xmlNode *> datasets;
+    BESXMLUtils::GetDescendants(startElement,DATASET,datasets);
+    xnIt = datasets.begin();
+    while(xnIt!=datasets.end()){
+        xmlNode *node = *xnIt;
+        BESDEBUG(MODULE, prolog << xmlNodeToString(node) << endl);
+        vector<xmlNode *>child_datasets;
+        BESXMLUtils::GetChildren(node,DATASET,child_datasets);
+        if(child_datasets.empty()){
+            // Simple dataset...
+            string element_name;
+            string value;
+            map<string, string> attributes;
+            std::map<string,string>::iterator ait;
+            BESXMLUtils::GetNodeInfo(node, element_name, value, attributes);
+
+            string id(""), name(""), urlPath("");
+
+            ait = attributes.find(ID);
+            if(ait!= attributes.end()){
+                id = ait->second;
+            }
+            ait = attributes.find(NAME);
+            if(ait!= attributes.end()){
+                name = ait->second;
+            }
+            ait = attributes.find(URL_PATH);
+            if(ait!= attributes.end()){
+                urlPath = ait->second;
+            }
+
+            CatalogItem *item = new CatalogItem();
+            item->set_type(CatalogItem::leaf);
+            item->set_name(name);
+
+
+
+
+
+        }
+        else {
+            BESDEBUG(MODULE, prolog << "SKIPPING compound dataset (It's in the descendants list) " << xmlNodeToString(node)  << endl);
+        }
+        xnIt++;
+    }
+    BESDEBUG(MODULE, prolog << "END - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
+
+}
+#endif
+
 
 void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<std::string, ThreddsService *> &services) const
 {
@@ -258,18 +451,37 @@ void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<st
         ThreddsService *thredds_srvc =  new ThreddsService();
 
         BESXMLUtils::GetChildren(srvc,SERVICE,cmpnd_srvcs);
+        string name, value;
+        map<string, string> attributes;
+        map<string,string>::iterator mit;
+
+        BESXMLUtils::GetNodeInfo(srvc, name, value, attributes);
+        mit = attributes.find(NAME);
+        if (mit == attributes.end()){
+            string err = (string) "THREDDS service declaration is missing the required " + NAME + " attribute.";
+            BESDEBUG(MODULE, prolog << err << endl);
+            throw BESInternalError(err, __FILE__, __LINE__);
+        }
+        thredds_srvc->name = mit->second;
+
+        mit = attributes.find(SERVICE_TYPE);
+        if (mit == attributes.end()){
+            string err = (string) "THREDDS service declaration is missing the required " + SERVICE_TYPE + " attribute.";
+            BESDEBUG(MODULE, prolog << err << endl);
+            throw BESInternalError(err, __FILE__, __LINE__);
+        }
+        thredds_srvc->serviceType = mit->second;
+
+
         if(cmpnd_srvcs.size() != 0){
+
             // This is a compound service
             getCatalogServices(srvc,thredds_srvc->child_services);
             services.insert(thredds_srvc->child_services.begin(),thredds_srvc->child_services.end());
+            services.insert(pair<string, ThreddsService *>(thredds_srvc->name,thredds_srvc));
         }
         else {
             // It's just a simple service...
-            string name, value;
-            map<string, string> attributes;
-            map<string,string>::iterator mit;
-
-            BESXMLUtils::GetNodeInfo(srvc, name, value, attributes);
 
             mit = attributes.find(BASE);
             if (mit == attributes.end()){
@@ -279,21 +491,6 @@ void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<st
             }
             thredds_srvc->base = mit->second;
 
-            mit = attributes.find(NAME);
-            if (mit == attributes.end()){
-                string err = (string) "THREDDS service declaration is missing the required " + NAME + " attribute.";
-                BESDEBUG(MODULE, prolog << err << endl);
-                throw BESInternalError(err, __FILE__, __LINE__);
-            }
-            thredds_srvc->name = mit->second;
-
-            mit = attributes.find(SERVICE_TYPE);
-            if (mit == attributes.end()){
-                string err = (string) "THREDDS service declaration is missing the required " + SERVICE_TYPE + " attribute.";
-                BESDEBUG(MODULE, prolog << err << endl);
-                throw BESInternalError(err, __FILE__, __LINE__);
-            }
-            thredds_srvc->serviceType = mit->second;
 
             services.insert(pair<string, ThreddsService *>(thredds_srvc->name,thredds_srvc));
         }
@@ -302,7 +499,36 @@ void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<st
 }
 
 
+xmlDocPtr parseXmlDoc(string xml_doc_str){
+    // set the default error function to my own
+    vector<string> parseerrors;
+    xmlSetGenericErrorFunc((void *) &parseerrors, BESXMLUtils::XMLErrorFunc);
 
+    // XML_PARSE_NONET
+    xmlDocPtr doc = xmlReadMemory(xml_doc_str.c_str(), xml_doc_str.size(), "" /* base URL */,
+                        NULL /* encoding */, XML_PARSE_NONET /* xmlParserOption */);
+
+    if (doc == NULL) {
+        string err = "Problem parsing the request xml document:\n";
+        bool isfirst = true;
+        vector<string>::const_iterator i = parseerrors.begin();
+        vector<string>::const_iterator e = parseerrors.end();
+        for (; i != e; i++) {
+            if (!isfirst && (*i).compare(0, 6, "Entity") == 0) {
+                err += "\n";
+            }
+            err += (*i);
+            isfirst = false;
+        }
+        throw BESSyntaxUserError(err, __FILE__, __LINE__);
+    }
+
+    // get the root element and make sure it exists and is called request
+    xmlNodePtr root_element = xmlDocGetRootElement(doc);
+    if (!root_element)
+        throw BESSyntaxUserError("There is no root element in the xml document", __FILE__, __LINE__);
+    return doc;
+}
 
 
 /**
@@ -331,59 +557,37 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
     ifstream t(rhr.getCacheFileName().c_str());
     stringstream buffer;
     buffer << t.rdbuf();
-    string catalog_str = buffer.str();
-    BESDEBUG(MODULE, prolog << "Read catalog: " << endl << catalog_str << endl);
+    string catalog_doc_str = buffer.str();
+    BESDEBUG(MODULE, prolog << "Read catalog: " << endl << catalog_doc_str << endl);
 
 
-    xmlDoc *doc = NULL;
+    xmlDoc *catalog_doc = NULL;
     xmlNode *root_element = NULL;
     xmlNode *current_node = NULL;
     try {
-        // set the default error function to my own
-        vector<string> parseerrors;
-        xmlSetGenericErrorFunc((void *) &parseerrors, BESXMLUtils::XMLErrorFunc);
-
         // XML_PARSE_NONET
-        doc = xmlReadMemory(catalog_str.c_str(), catalog_str.size(), "" /* base URL */,
-                            NULL /* encoding */, XML_PARSE_NONET /* xmlParserOption */);
+        catalog_doc = parseXmlDoc(catalog_doc_str);
+        // get the root element and we know it exists because parseXmlDoc() checks.
+        root_element = xmlDocGetRootElement(catalog_doc);
 
-        if (doc == NULL) {
-            string err = "Problem parsing the request xml document:\n";
-            bool isfirst = true;
-            vector<string>::const_iterator i = parseerrors.begin();
-            vector<string>::const_iterator e = parseerrors.end();
-            for (; i != e; i++) {
-                if (!isfirst && (*i).compare(0, 6, "Entity") == 0) {
-                    err += "\n";
-                }
-                err += (*i);
-                isfirst = false;
-            }
-            throw BESSyntaxUserError(err, __FILE__, __LINE__);
-        }
-
-        // get the root element and make sure it exists and is called request
-        root_element = xmlDocGetRootElement(doc);
-        if (!root_element)
-            throw BESSyntaxUserError("There is no root element in the xml document", __FILE__, __LINE__);
-
-        string root_name;
-        string root_val;
+        string eName;
+        string eValue;
         map<string, string> attributes;
-        BESXMLUtils::GetNodeInfo(root_element, root_name, root_val, attributes);
-        if (root_name != "catalog")
+        BESXMLUtils::GetNodeInfo(root_element, eName, eValue, attributes);
+        if (eName != CATALOG)
             throw BESSyntaxUserError(
                 string("The root element should be a thredds:catalog element, found: ").append((char *) root_element->name),
                 __FILE__, __LINE__);
 
+#if 0
+        // This is not really needed, because, who cares?
         if (!root_val.empty())
-            throw BESSyntaxUserError(string("The request element must not contain a value, ").append(root_val),
+            throw BESSyntaxUserError(string("The request element must not contain a text value, ").append(root_val),
             __FILE__, __LINE__);
-
-        string eName, eValue;
-        map<string, string> eProps;
+#endif
         xmlNode *lastElement = root_element;
-        xmlNode *thisElement = BESXMLUtils::GetFirstChild(root_element, eName, eValue, eProps);
+        attributes.clear();
+        xmlNode *thisElement = BESXMLUtils::GetFirstChild(root_element, eName, eValue, attributes);
 
         BESDEBUG(MODULE, prolog << "FIRST CHILD ELEMENT - " << xmlNodeToString(thisElement) << endl);
        if(thisElement == root_element){
@@ -391,7 +595,6 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
         }
 
 
-       BESDEBUG(MODULE, prolog << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
        std::map<std::string, ThreddsService *> services;
        std::map<std::string, ThreddsService *>::iterator sit;
        getCatalogServices(root_element,services);
@@ -404,17 +607,28 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
 
 
 
+       while(lastElement != thisElement){
+           BESDEBUG(MODULE, prolog << "Processing " << xmlNodeToString(thisElement) << endl);
+           if(eName == DATASET){
+               traverse_dataset(catalog_doc, thisElement, services, items);
+           }
+           else if(eName == CATALOG_REF){
+               CatalogItem *catalogRef_node = get_catalog_ref_node(attributes);
+               items.insert(pair<string,CatalogItem*>(catalogRef_node->get_name(),catalogRef_node));
+           }
+           else if(eName == SERVICE){
+               BESDEBUG(MODULE, prolog << "Skipping " << SERVICE << ", already processed." << endl);
+           }
+           else {
+               BESDEBUG(MODULE, prolog << "Skipping " << eName << " element. No processing rule." << endl);
+           }
+           lastElement = thisElement;
+           thisElement = BESXMLUtils::GetNextChild(lastElement, eName, eValue, attributes);
+       }
+#if 0
 
        vector<xmlNode *>::iterator xnIt;
 
-       BESDEBUG(MODULE, prolog << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
-       vector<xmlNode *> services_1;
-       BESXMLUtils::GetChildren(root_element,SERVICE,services_1);
-       xnIt = services_1.begin();
-       while(xnIt!=services_1.end()){
-           BESDEBUG(MODULE, prolog << xmlNodeToString(*xnIt) << endl);
-           xnIt++;
-       }
 
        BESDEBUG(MODULE, prolog << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
        vector<xmlNode *> datasets;
@@ -435,7 +649,6 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
        }
        BESDEBUG(MODULE, prolog << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"<< endl);
 
-       /*
         while(lastElement != thisElement){
             lastElement = thisElement;
             thisElement = BESXMLUtils::GetNextChild(lastElement, eName, eValue, eProps);
@@ -449,19 +662,15 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
             }
 
         }
-
-*/
-
-
-
+#endif
     }
     catch (...) {
-        xmlFreeDoc(doc);
+        xmlFreeDoc(catalog_doc);
         xmlCleanupParser();
         throw;
     }
 
-    xmlFreeDoc(doc);
+    xmlFreeDoc(catalog_doc);
 
     // Removed since the docs indicate it's not needed and it might be
     // contributing to memory issues flagged by valgrind. 2/25/09 jhrg

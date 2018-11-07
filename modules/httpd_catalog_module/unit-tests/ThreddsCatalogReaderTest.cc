@@ -182,7 +182,9 @@ public:
         if(debug) cerr << endl;
         // note: the following path must end with "/" in order for the scraper to think
         // it's a catalog/directory link and not an item or file
-        string url = "http://test.opendap.org/opendap/catalog.xml";
+
+        string url = "https://thredds.daac.ornl.gov/thredds/catalog/ornldaac/1502/catalog.xml";
+        // string url = "http://test.opendap.org/opendap/catalog.xml";
         ThreddsCatalogReader tcr;
         bes::CatalogNode *node = 0;
         try {

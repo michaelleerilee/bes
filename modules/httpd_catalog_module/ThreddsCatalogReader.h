@@ -46,12 +46,12 @@ public:
     std::string show(){
         std::stringstream ss;
 
-        ss<< "ThreddsService name: " << name;
+        ss << "thredds service - ";
+        ss << " name: " << name;
+        ss << " serviceType: " << serviceType;
         if(child_services.empty()){
-            // It's a asimple service.
-            ss << " serviceType: " << serviceType;
+            // It's a a simple service.
             ss << " base: " << base << endl;
-
         }
         else {
             // It's a compound service
@@ -59,12 +59,15 @@ public:
             std::map<std::string, ThreddsService *>::iterator it =  child_services.begin();
             while(it != child_services.end()){
                 ss << it->second->show() ;
+                it++;
             }
         }
         return ss.str();
     }
 
 };
+
+
 
 /**
  * @brief This class knows how to scrape an httpd generated directory page and build a BES CatalogNode response
@@ -76,6 +79,7 @@ public:
  */
 class ThreddsCatalogReader {
 private:
+
     void getCatalogServices(xmlNode *lastElement, std::map<std::string, ThreddsService *> &services) const;
     void ingestThreddsCatalog(std::string url, std::map<std::string, bes::CatalogItem *> &items) const;
 
