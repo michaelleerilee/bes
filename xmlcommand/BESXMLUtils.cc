@@ -30,8 +30,17 @@
 //      pwest       Patrick West <pwest@ucar.edu>
 //      jgarcia     Jose Garcia <jgarcia@ucar.edu>
 
+#include <libxml/xpathInternals.h>
+#include <libxml/tree.h>
+#include <libxml/parser.h>
+
 #include "BESXMLUtils.h"
 #include "BESUtil.h"
+#include "BESDebug.h"
+
+#define MODULE "bes"
+
+#define prolog std::string("BESXMLUtils::").append(__func__).append("() - ")
 
 /** @brief error function used by libxml2 to report errors
  *
@@ -263,6 +272,67 @@ void BESXMLUtils::GetDescendants(xmlNode *node, const string &descendant_name, v
     }
 }
 
+
+/**
+ * register_namespaces:
+ * @xpathCtx:       the pointer to an XPath context.
+ * @nsList:     the list of known namespaces in
+ *          "<prefix1>=<href1> <prefix2>=href2> ..." format.
+ *
+ * Registers namespaces from @nsList in @xpathCtx.
+ *
+ * Returns 0 on success and a negative value otherwise.
+ */
+int BESXMLUtils::register_namespaces(xmlXPathContextPtr xpathCtx, const xmlChar* nsList)
+{
+    xmlChar* nsListDup;
+    xmlChar* prefix;
+    xmlChar* href;
+    xmlChar* next;
+
+    assert(xpathCtx);
+    assert(nsList);
+
+    nsListDup = xmlStrdup(nsList);
+    if(nsListDup == NULL) {
+        BESDEBUG(MODULE, prolog << "Error: unable to xmlStrdup namespaces list" << endl);
+        return(-1);
+    }
+
+    next = nsListDup;
+    while(next != NULL) {
+    /* skip spaces */
+    while((*next) == ' ') next++;
+    if((*next) == '\0') break;
+
+    /* find prefix */
+    prefix = next;
+    next = (xmlChar*)xmlStrchr(next, '=');
+    if(next == NULL) {
+        BESDEBUG(MODULE, prolog << "Error: invalid namespaces list format" << endl);
+        xmlFree(nsListDup);
+        return(-1);
+    }
+    *(next++) = '\0';
+
+    /* find href */
+    href = next;
+    next = (xmlChar*)xmlStrchr(next, ' ');
+    if(next != NULL) {
+        *(next++) = '\0';
+    }
+
+    /* do register namespace */
+    if(xmlXPathRegisterNs(xpathCtx, prefix, href) != 0) {
+        BESDEBUG(MODULE, prolog << "Error: unable to register NS with prefix=\""<< prefix << "\" and href=\""<< href << "\"" << endl);
+        xmlFree(nsListDup);
+        return(-1);
+    }
+    }
+
+    xmlFree(nsListDup);
+    return(0);
+}
 
 
 

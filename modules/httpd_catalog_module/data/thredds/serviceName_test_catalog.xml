@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<catalog xmlns="http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0.1">
+    <service name="noncss" serviceType="Compound" base="">
+        <service name="odap" serviceType="OPENDAP" base="/thredds/dodsC/"/>
+        <service name="http" serviceType="HTTPServer" base="/thredds/fileServer/"/>
+    </service>
+    <service name="odap2" serviceType="OPENDAP" base="/thredds/dodsC/"/>
+    <service name="http2" serviceType="HTTPServer" base="/thredds/fileServer/"/>
+    <dataset name="TopLevelDataSet" ID="Dataset_000">
+        <metadata inherited="true">
+            <serviceName>noncss</serviceName>
+        </metadata>
+
+
+        <dataset name="./serviceName" ID="./serviceName.nc4" urlPath="serviceName.nc4">
+            <serviceName>odap</serviceName>
+            <dataSize units="Gbytes">1.00</dataSize>
+            <date type="modified">2011-01-01T11:11:11.111Z</date>
+        </dataset>
+
+        <dataset name="./metadata/serviceName" ID="metadata_serviceName.nc4" urlPath="metadata_serviceName.nc4">
+            <metadata inherited="false">
+                <serviceName>odap2</serviceName>
+            </metadata>
+            <dataSize units="Gbytes">2.00</dataSize>
+            <date type="modified">2012-02-02T00:22:22.222Z</date>
+        </dataset>
+
+        <dataset name="@serviceName" ID="@serviceName.nc4" urlPath="atServiceName.nc4" serviceName="http">
+                    <dataSize units="Gbytes">3.00</dataSize>
+            <date type="modified">2013-03-03T00:33:3.333Z</date>
+        </dataset>
+
+
+        <dataset name="Inherited Metadata ServiceName From Parent" urlPath="inheritedMetdataServiceNameFromParent.nc4">
+            <dataSize units="Gbytes">4.00</dataSize>
+            <date type="modified">2014-04-04T00:44:44.444Z</date>
+        </dataset>
+
+        <dataset name="SecondLevelDataSet" ID="Dataset_002">
+            <dataset name="Inherited Metadata ServiceName From Grandparent" urlPath="inheritedMetdataServiceNameFromGrandparent.nc4">
+                <dataSize units="Gbytes">4.00</dataSize>
+                <date type="modified">2014-04-04T00:44:44.444Z</date>
+            </dataset>
+        </dataset>
+
+    </dataset>
+</catalog>

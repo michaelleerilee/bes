@@ -38,11 +38,12 @@
 #include <string>
 #include <sstream>
 
+#include <libxml/encoding.h>
+#include <libxml/xpath.h>
+
 using std::map;
 using std::vector;
 using std::string;
-
-#include <libxml/encoding.h>
 
 
 class BESXMLUtils {
@@ -62,6 +63,7 @@ public:
         map<string, string> &child_props);
     static void GetChildren(xmlNode *node, const string &child_name, vector<xmlNode *> &children);
     static void GetDescendants(xmlNode *node, const string &descendant_name, vector<xmlNode *> &descendants);
+    static int register_namespaces(xmlXPathContextPtr xpathContext, const xmlChar* namespace_list);
 
 };
 

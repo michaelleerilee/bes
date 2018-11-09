@@ -130,7 +130,7 @@ public:
     // Called once before everything gets tested
     ThreddsCatalogReaderTest()
     {
-        d_data_dir = BESUtil::assemblePath(TEST_DATA_DIR,"httpd_dirs");
+        d_data_dir = BESUtil::assemblePath(TEST_DATA_DIR,"thredds");
         if(debug) cerr << "data_dir: " << d_data_dir << endl;
     }
 
@@ -230,13 +230,13 @@ public:
 
         // note: the following path must end with "/" in order for the scraper to think
         // it's a catalog/directory link and not an item or file (even though it is a file...)
-        string url = get_data_file_url("too.data.http_catalog/");
+        string url = get_data_file_url("serviceName_test_catalog.xml");
 
         ThreddsCatalogReader tcr;
         bes::CatalogNode *node = 0;
         try {
             if(debug) cerr << prolog << "Scraping '" << url << "'" << endl;
-            node = tcr.get_node(url,"/data/httpd_catalog/");
+            node = tcr.get_node(url,"/data/thredds/");
             if(debug) cerr << prolog << "Found " <<  node->get_leaf_count() << " leaves and " << node->get_node_count() << " nodes." << endl;
 
             // Node items...
@@ -278,8 +278,8 @@ public:
 
     CPPUNIT_TEST_SUITE( ThreddsCatalogReaderTest );
 
-    CPPUNIT_TEST(get_remote_node_test);
-    // CPPUNIT_TEST(get_file_node_test);
+    // CPPUNIT_TEST(get_remote_node_test);
+    CPPUNIT_TEST(get_file_node_test);
 
     CPPUNIT_TEST_SUITE_END();
 };

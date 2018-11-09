@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <thredds:catalog xmlns:thredds="http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0"
+                 xmlns:xlink="http://www.w3.org/1999/xlink"
+                 xmlns:bes="http://xml.opendap.org/ns/bes/1.0#">
+   <thredds:service name="dap" serviceType="OPeNDAP" base="/opendap/hyrax"/>
+   <thredds:service name="file" serviceType="HTTPServer" base="/opendap/hyrax"/>
+  <thredds:service name="WCS-coads" serviceType="WCS" base="/opendap/wcs"/>
+
+        <thredds:dataset name="/" ID="/opendap/hyrax/">
+            <thredds:catalogRef name="AIRS" xlink:href="AIRS/catalog.xml" xlink:title="AIRS"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/AIRS/"/>
+            <thredds:catalogRef name="BALTO" xlink:href="BALTO/catalog.xml" xlink:title="BALTO"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/BALTO/"/>
+            <thredds:dataset name="ECMWF_ERA-40_subset.ncml" ID="/opendap/hyrax/ECMWF_ERA-40_subset.ncml">
+         <thredds:dataSize units="bytes">1084</thredds:dataSize>
+         <thredds:date type="modified">2010-09-22T20:20:33</thredds:date>
+         <thredds:access serviceName="dap" urlPath="/ECMWF_ERA-40_subset.ncml"/>
+         <thredds:access serviceName="file" urlPath="/ECMWF_ERA-40_subset.ncml"/>
+  
+      </thredds:dataset>
+            <thredds:catalogRef name="MODIS" xlink:href="MODIS/catalog.xml" xlink:title="MODIS"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/MODIS/"/>
+            <thredds:catalogRef name="NSIDC" xlink:href="NSIDC/catalog.xml" xlink:title="NSIDC"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/NSIDC/"/>
+            <thredds:catalogRef name="OWS-9" xlink:href="OWS-9/catalog.xml" xlink:title="OWS-9"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/OWS-9/"/>
+            <thredds:catalogRef name="Pathfinder" xlink:href="Pathfinder/catalog.xml" xlink:title="Pathfinder"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/Pathfinder/"/>
+            <thredds:dataset name="README" ID="/opendap/hyrax/README">
+         <thredds:dataSize units="bytes">703</thredds:dataSize>
+         <thredds:date type="modified">2016-08-25T23:09:30</thredds:date>
+         <thredds:access serviceName="file" urlPath="/README"/>
+      </thredds:dataset>
+            <thredds:catalogRef name="RSS" xlink:href="RSS/catalog.xml" xlink:title="RSS" xlink:type="simple"
+                          ID="/opendap/hyrax/RSS/"/>
+            <thredds:catalogRef name="SADCP" xlink:href="SADCP/catalog.xml" xlink:title="SADCP"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/SADCP/"/>
+            <thredds:catalogRef name="agg" xlink:href="agg/catalog.xml" xlink:title="agg" xlink:type="simple"
+                          ID="/opendap/hyrax/agg/"/>
+            <thredds:catalogRef name="ais" xlink:href="ais/catalog.xml" xlink:title="ais" xlink:type="simple"
+                          ID="/opendap/hyrax/ais/"/>
+            <thredds:catalogRef name="async" xlink:href="async/catalog.xml" xlink:title="async"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/async/"/>
+            <thredds:catalogRef name="basic" xlink:href="basic/catalog.xml" xlink:title="basic"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/basic/"/>
+            <thredds:catalogRef name="catalog" xlink:href="catalog/catalog.xml" xlink:title="catalog"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/catalog/"/>
+            <thredds:catalogRef name="cloudydap" xlink:href="cloudydap/catalog.xml" xlink:title="cloudydap"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/cloudydap/"/>
+            <thredds:catalogRef name="codar" xlink:href="codar/catalog.xml" xlink:title="codar"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/codar/"/>
+            <thredds:catalogRef name="conus" xlink:href="conus/catalog.xml" xlink:title="conus"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/conus/"/>
+            <thredds:catalogRef name="coverage" xlink:href="coverage/catalog.xml" xlink:title="coverage"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/coverage/"/>
+            <thredds:catalogRef name="crashed" xlink:href="crashed/catalog.xml" xlink:title="crashed"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/crashed/"/>
+            <thredds:catalogRef name="data" xlink:href="data/catalog.xml" xlink:title="data"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/data/"/>
+            <thredds:catalogRef name="digest" xlink:href="digest/catalog.xml" xlink:title="digest"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/digest/"/>
+            <thredds:catalogRef name="fan" xlink:href="fan/catalog.xml" xlink:title="fan" xlink:type="simple"
+                          ID="/opendap/hyrax/fan/"/>
+            <thredds:catalogRef name="forbidden" xlink:href="forbidden/catalog.xml" xlink:title="forbidden"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/forbidden/"/>
+            <thredds:catalogRef name="gateway" xlink:href="gateway/catalog.xml" xlink:title="gateway"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/gateway/"/>
+            <thredds:dataset name="index.html" ID="/opendap/hyrax/index.html">
+         <thredds:dataSize units="bytes">3117</thredds:dataSize>
+         <thredds:date type="modified">2014-10-13T21:26:33</thredds:date>
+         <thredds:access serviceName="file" urlPath="/index.html"/>
+      </thredds:dataset>
+            <thredds:catalogRef name="ioos" xlink:href="ioos/catalog.xml" xlink:title="ioos"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/ioos/"/>
+            <thredds:catalogRef name="larc" xlink:href="larc/catalog.xml" xlink:title="larc"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/larc/"/>
+            <thredds:catalogRef name="lily" xlink:href="lily/catalog.xml" xlink:title="lily"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/lily/"/>
+            <thredds:dataset name="loop.tar" ID="/opendap/hyrax/loop.tar">
+         <thredds:dataSize units="bytes">20480</thredds:dataSize>
+         <thredds:date type="modified">2010-03-04T00:41:21</thredds:date>
+         <thredds:access serviceName="file" urlPath="/loop.tar"/>
+      </thredds:dataset>
+            <thredds:catalogRef name="miic" xlink:href="miic/catalog.xml" xlink:title="miic"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/miic/"/>
+            <thredds:catalogRef name="navid" xlink:href="navid/catalog.xml" xlink:title="navid"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/navid/"/>
+            <thredds:catalogRef name="nc4_test_files" xlink:href="nc4_test_files/catalog.xml"
+                          xlink:title="nc4_test_files"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/nc4_test_files/"/>
+            <thredds:catalogRef name="nciso" xlink:href="nciso/catalog.xml" xlink:title="nciso"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/nciso/"/>
+            <thredds:catalogRef name="netcdf" xlink:href="netcdf/catalog.xml" xlink:title="netcdf"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/netcdf/"/>
+            <thredds:catalogRef name="noaa_pathfinder" xlink:href="noaa_pathfinder/catalog.xml"
+                          xlink:title="noaa_pathfinder"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/noaa_pathfinder/"/>
+            <thredds:catalogRef name="nwa_catalog" xlink:href="nwa_catalog/catalog.xml"
+                          xlink:title="nwa_catalog"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/nwa_catalog/"/>
+            <thredds:catalogRef name="ooi" xlink:href="ooi/catalog.xml" xlink:title="ooi" xlink:type="simple"
+                          ID="/opendap/hyrax/ooi/"/>
+            <thredds:catalogRef name="phuong" xlink:href="phuong/catalog.xml" xlink:title="phuong"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/phuong/"/>
+            <thredds:catalogRef name="seawifs" xlink:href="seawifs/catalog.xml" xlink:title="seawifs"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/seawifs/"/>
+            <thredds:catalogRef name="slav" xlink:href="slav/catalog.xml" xlink:title="slav"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/slav/"/>
+            <thredds:catalogRef name="softlink" xlink:href="softlink/catalog.xml" xlink:title="softlink"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/softlink/"/>
+            <thredds:catalogRef name="stocker" xlink:href="stocker/catalog.xml" xlink:title="stocker"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/stocker/"/>
+            <thredds:catalogRef name="test" xlink:href="test/catalog.xml" xlink:title="test"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/test/"/>
+            <thredds:dataset name="test-304.html" ID="/opendap/hyrax/test-304.html">
+         <thredds:dataSize units="bytes">343</thredds:dataSize>
+         <thredds:date type="modified">2005-07-13T19:32:26</thredds:date>
+         <thredds:access serviceName="file" urlPath="/test-304.html"/>
+      </thredds:dataset>
+            <thredds:catalogRef name="thredds" xlink:href="thredds/catalog.xml" xlink:title="thredds"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/thredds/"/>
+            <thredds:catalogRef name="tmp" xlink:href="tmp/catalog.xml" xlink:title="tmp" xlink:type="simple"
+                          ID="/opendap/hyrax/tmp/"/>
+            <thredds:catalogRef name="trink" xlink:href="trink/catalog.xml" xlink:title="trink"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/trink/"/>
+            <thredds:catalogRef name="ugrid" xlink:href="ugrid/catalog.xml" xlink:title="ugrid"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/ugrid/"/>
+            <thredds:catalogRef name="viirs" xlink:href="viirs/catalog.xml" xlink:title="viirs"
+                          xlink:type="simple"
+                          ID="/opendap/hyrax/viirs/"/>
+            <thredds:catalogRef name="wcs" xlink:href="wcs/catalog.xml" xlink:title="wcs" xlink:type="simple"
+                          ID="/opendap/hyrax/wcs/"/>
+        </thredds:dataset>
+    </thredds:catalog>

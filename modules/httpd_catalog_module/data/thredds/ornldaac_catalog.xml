@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="http://www.unidata.ucar.edu/namespaces/thredds/InvCatalog/v1.0" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0.1">
+  <service name="noncss" serviceType="Compound" base="">
+    <service name="odap" serviceType="OPENDAP" base="/thredds/dodsC/" />
+    <service name="http" serviceType="HTTPServer" base="/thredds/fileServer/" />
+    <service name="wcs" serviceType="WCS" base="/thredds/wcs/" />
+    <service name="wms" serviceType="WMS" base="/thredds/wms/" />
+    <service name="ncml" serviceType="NCML" base="/thredds/ncml/" />
+    <service name="iso" serviceType="ISO" base="/thredds/iso/" />
+    <service name="uddc" serviceType="UDDC" base="/thredds/uddc/" />
+  </service>
+  <dataset name="CMS: Global 0.5-deg Wetland Methane Emissions and Uncertainty (WetCHARTs v1.0)" ID="1502">
+    <timeCoverage>
+      <start>2001-01-01</start>
+      <end>2015-12-31</end>
+    </timeCoverage>
+    <metadata inherited="true">
+      <serviceName>noncss</serviceName>
+      <dataType>GRID</dataType>
+      <dataFormat>netCDF</dataFormat>
+      <documentation xlink:href="https://daac.ornl.gov/CMS/guides/CMS_Global_Monthly_Wetland_CH4.html" xlink:title="User Guide" />
+      <contributor role="Investigator">BLOOM, A.A.</contributor>
+      <contributor role="Investigator">Bowman, K.W.</contributor>
+      <contributor role="Investigator">Lee, M.</contributor>
+      <contributor role="Investigator">Turner, A.J.</contributor>
+      <contributor role="Investigator">SCHROEDER, R.</contributor>
+      <contributor role="Investigator">Worden, J.R.</contributor>
+      <contributor role="Investigator">WEIDNER, R.J.</contributor>
+      <contributor role="Investigator">MCDONALD, K.C.</contributor>
+      <contributor role="Investigator">JACOB, D.J.</contributor>
+      <keyword>Modeling, Methane Emissions, Global Wetlands, GEOS-CHEM</keyword>
+      <project>Carbon Monitoring System</project>
+      <property name="Min X" value="-180" />
+      <property name="Min Y" value="-90" />
+      <property name="Max X" value="180" />
+      <property name="Max Y" value="90" />
+      <property name="Ingest Date" value="2017-06-05 08:00:03" />
+      <property name="Processing Level" value="3" />
+      <property name="Citation" value="Bloom, A.A., K. Bowman, M. Lee, A.J. Turner, R. Schroeder, J.R. Worden, R.J. Weidner, K.C. McDonald, and D.J. Jacob. 2017. CMS: Global 0.5-deg Wetland Methane Emissions and Uncertainty (WetCHARTs v1.0). ORNL DAAC, Oak Ridge, Tennessee, USA. https://doi.org/10.3334/ORNLDAAC/1502" />
+      <publisher>
+        <name vocabulary="DIF">Oak Ridge National Laboratory Distributed Active Archive Center (ORNL DAAC)</name>
+        <contact url="https://daac.ornl.gov" email="support-ornl@earthdata.nasa.gov" />
+      </publisher>
+    </metadata>
+    <dataset name="WetCHARTs_extended_ensemble.nc4" ID="1502/WetCHARTs_extended_ensemble.nc4" urlPath="ornldaac/1502/WetCHARTs_extended_ensemble.nc4">
+      <dataSize units="Gbytes">1.007</dataSize>
+      <date type="modified">2017-06-01T13:35:34.654Z</date>
+    </dataset>
+    <dataset name="WetCHARTs_full_ensemble.nc4" ID="1502/WetCHARTs_full_ensemble.nc4" urlPath="ornldaac/1502/WetCHARTs_full_ensemble.nc4">
+      <dataSize units="Gbytes">1.825</dataSize>
+      <date type="modified">2017-06-01T13:35:41.778Z</date>
+    </dataset>
+  </dataset>
+</catalog>
