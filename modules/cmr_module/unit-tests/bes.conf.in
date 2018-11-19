@@ -14,7 +14,7 @@
 
 
 Gateway.Whitelist=http://localhost
-#Gateway.Whitelist+=https://cmr.earthdata.nasa.gov
+Gateway.Whitelist+=https://cmr.earthdata.nasa.gov
 
 
 BES.Catalog.Default=catalog

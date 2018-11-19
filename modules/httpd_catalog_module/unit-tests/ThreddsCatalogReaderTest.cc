@@ -225,12 +225,13 @@ public:
         delete node;
     }
 
-    void get_file_node_test() {
+
+    bes::CatalogNode *file_node_test_worker(string test_catalog_file){
         if(debug) cerr << endl;
 
         // note: the following path must end with "/" in order for the scraper to think
         // it's a catalog/directory link and not an item or file (even though it is a file...)
-        string url = get_data_file_url("serviceName_test_catalog.xml");
+        string url = get_data_file_url(test_catalog_file);
 
         ThreddsCatalogReader tcr;
         bes::CatalogNode *node = 0;
@@ -238,29 +239,6 @@ public:
             if(debug) cerr << prolog << "Scraping '" << url << "'" << endl;
             node = tcr.get_node(url,"/data/thredds/");
             if(debug) cerr << prolog << "Found " <<  node->get_leaf_count() << " leaves and " << node->get_node_count() << " nodes." << endl;
-
-            // Node items...
-            CPPUNIT_ASSERT(node->get_node_count() == 2);
-            bes::CatalogNode::item_iter it = node->nodes_begin();
-            bes::CatalogItem *first_node = *it++;
-            if(debug) cerr << prolog << "first_node: " << first_node->get_name() << endl;
-            CPPUNIT_ASSERT(first_node->get_name() == "subdir1");
-
-            bes::CatalogItem *second_node = *it;
-            if(debug) cerr << prolog << "second_node: " << second_node->get_name() << endl;
-            CPPUNIT_ASSERT(second_node->get_name() == "subdir2");
-
-            // Leaf items...
-            CPPUNIT_ASSERT(node->get_leaf_count() == 2);
-            it = node->leaves_begin();
-            bes::CatalogItem *first_leaf = *it++;
-            if(debug) cerr << prolog << "first_leaf: " << first_leaf->get_name() << endl;
-            CPPUNIT_ASSERT(first_leaf->get_name() == "READTHIS");
-
-            bes::CatalogItem *second_leaf = *it;
-            if(debug) cerr << prolog << "second_leaf: " << second_leaf->get_name() << endl;
-            CPPUNIT_ASSERT(second_leaf->get_name() == "fnoc1.nc");
-
         }
         catch (BESError &besE){
             cerr << "Caught BESError! message: " << besE.get_verbose_message() << " type: " << besE.get_bes_error_type() << endl;
@@ -268,6 +246,38 @@ public:
         catch (libdap::Error &le){
             cerr << "Caught libdap::Error! message: " << le.get_error_message() << " code: "<< le.get_error_code() << endl;
         }
+        return node;
+    }
+
+
+
+    void default_serviceName_resolution_test() {
+        if(debug) cerr << endl;
+
+        bes::CatalogNode *node = file_node_test_worker("serviceName_test_catalog.xml");
+
+        // Node items...
+        CPPUNIT_ASSERT(node->get_node_count() == 2);
+        bes::CatalogNode::item_iter it = node->nodes_begin();
+        bes::CatalogItem *first_node = *it++;
+        if(debug) cerr << prolog << "first_node: " << first_node->get_name() << endl;
+        CPPUNIT_ASSERT(first_node->get_name() == "subdir1");
+
+        bes::CatalogItem *second_node = *it;
+        if(debug) cerr << prolog << "second_node: " << second_node->get_name() << endl;
+        CPPUNIT_ASSERT(second_node->get_name() == "subdir2");
+
+        // Leaf items...
+        CPPUNIT_ASSERT(node->get_leaf_count() == 2);
+        it = node->leaves_begin();
+        bes::CatalogItem *first_leaf = *it++;
+        if(debug) cerr << prolog << "first_leaf: " << first_leaf->get_name() << endl;
+        CPPUNIT_ASSERT(first_leaf->get_name() == "READTHIS");
+
+        bes::CatalogItem *second_leaf = *it;
+        if(debug) cerr << prolog << "second_leaf: " << second_leaf->get_name() << endl;
+        CPPUNIT_ASSERT(second_leaf->get_name() == "fnoc1.nc");
+
         delete node;
     }
 
@@ -279,7 +289,7 @@ public:
     CPPUNIT_TEST_SUITE( ThreddsCatalogReaderTest );
 
     // CPPUNIT_TEST(get_remote_node_test);
-    CPPUNIT_TEST(get_file_node_test);
+    CPPUNIT_TEST(default_serviceName_resolution_test);
 
     CPPUNIT_TEST_SUITE_END();
 };

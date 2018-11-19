@@ -66,6 +66,7 @@ using bes::CatalogItem;
 #define UNITS "units"
 #define SERVICE_NAME "serviceName"
 #define URL_PATH "urlPath"
+#define DATA_FORMAT "dataFormat"
 #define TYPE "type"
 #define HREF "href"
 #define TITLE "title"
@@ -75,6 +76,54 @@ using bes::CatalogItem;
 #define NAME "name"
 
 namespace httpd_catalog {
+
+ThreddsAccess::ThreddsAccess(xmlNodePtr accessElement, ThreddsService *defaultService):d_access(accessElement)
+{
+    // Find File and DAP services.
+    string aname(""), avalue("");
+    map<string, string> attrs;
+    map<string, string>::iterator attrIt;
+    BESXMLUtils::GetNodeInfo(accessElement, aname, avalue, attrs);
+    // thredds:access children
+    // ./dataSize
+    // @urlPath
+    // @serviceName
+    // @dataFormat
+
+    urlPath = dataFormat = "";
+    attrIt = attrs.find(URL_PATH);
+    if(attrIt!= attrs.end()){
+        urlPath = attrIt->second;
+    }
+
+    string serviceName;
+    attrIt = attrs.find(SERVICE_NAME);
+    if(attrIt!= attrs.end()){
+        serviceName = attrIt->second;
+    }
+
+    if(serviceName.empty() && defaultService){
+        service = defaultService;
+    }
+    else {
+
+    }
+
+
+
+
+    attrIt = attrs.find(DATA_FORMAT);
+    if(attrIt!= attrs.end()){
+        dataFormat = attrIt->second;
+    }
+}
+string ThreddsAccess::getAccessUrl(){
+    if(service->serviceType == threddsServiceType::Compound);
+
+    BESUtil::pathConcat(service->base, urlPath);
+}
+
+
 
 ThreddsCatalogReader::ThreddsCatalogReader()
 {
@@ -166,6 +215,7 @@ CatalogItem *get_catalog_ref_node(map<string, string> &eProps){
     return catalogRef_node;
 }
 
+#if 0
 /**
  * From the example expressed here:
  *     http://xmlsoft.org/tutorial/ar01s05.html
@@ -260,7 +310,7 @@ xmlXPathObjectPtr get_node_set (xmlDocPtr doc, xmlNodePtr current_node,  xmlChar
     // xmlXPathFreeObject(result);
     return result;
 }
-
+#endif
 
 
 bool p1_serviceName_location(xmlNodePtr dataset, string &serviceName){
@@ -370,7 +420,6 @@ bool get_default_service_name(xmlNodePtr dataset_node, string &serviceName){
  *
  */
 ThreddsService *get_default_service(
-    xmlDocPtr catalog_doc,
     xmlNodePtr dataset_node,
     std::map<std::string, ThreddsService *> &services
     ){
@@ -406,7 +455,7 @@ ThreddsService *get_default_service(
  name: 'access' value: '2005-07-13T19:32:26' attrs: 'serviceName="file" type="modified" units="bytes" urlPath="/test-304.html" '
  *
  */
-CatalogItem *get_dataset_leaf(xmlNode *datasetElement){
+CatalogItem *get_dataset_leaf(xmlNode *datasetElement, std::map<std::string, ThreddsService *> &services){
     string eName(""), eValue("");
     map<string, string> attributes;
     BESXMLUtils::GetNodeInfo(datasetElement, eName, eValue, attributes);
@@ -439,6 +488,84 @@ CatalogItem *get_dataset_leaf(xmlNode *datasetElement){
         urlPath = pit->second;
     }
 
+    // --------------------------------------------------------------
+    // Process thredds::dataSize element if present in the dataset
+    size_t dataset_size;
+    map<string, string> size_attrs;
+    string size_value("");
+    xmlNodePtr dataSizeElement= BESXMLUtils::GetChild(datasetElement,DATA_SIZE,size_value,size_attrs);
+
+
+    // If the dataSize element is present we need to process it's @units attribute
+    // so that the size (in bytes) can be calculated.
+    if(dataSizeElement){
+        // Attribute units is required.
+        // Allowed units values are {"bytes", "Kbytes", "Mbytes", "Gbytes", "Tbytes"}
+        BESUtil::removeLeadingAndTrailingBlanks(size_value);
+        dataset_size = atol(size_value.c_str());
+        map<string, string>::iterator it;
+        it = size_attrs.find(UNITS);
+        if(it != size_attrs.end()){
+            string units = it->second;
+            size_t scale=1;
+            string lunits = BESUtil::lowercase(units);
+
+            switch(lunits[0]){
+
+            case 'k':
+                scale = 1024;
+                break;
+
+            case 'm':
+                scale = 1024 * 1024;
+                break;
+
+            case 'g':
+                scale = 1024 * 1024 * 1024;
+                break;
+
+            case 't':
+                scale = 1024 * 1024 * 1024 * 1024;
+                break;
+
+            case 'b':
+            default:
+                scale = 1;
+                break;
+
+            }
+            BESDEBUG(MODULE, prolog << "Found " << UNITS << ": " << units << " scale: " << scale << endl);
+            dataset_size *= scale;
+        }
+    }
+
+
+
+    // --------------------------------------------------------------
+    // Process thredds::access elements if present in the dataset
+    //
+    vector<xmlNodePtr> accessElements;
+    BESXMLUtils::GetChildren(datasetElement, ACCESS, accessElements);
+
+    BESDEBUG(MODULE, prolog << "Found " << accessElements.size() << " access elements." << endl);
+
+    ThreddsService *defaultService = get_default_service(datasetElement, services);
+    BESDEBUG(MODULE, prolog << "Dataset default THREDDS Service:: " << (defaultService?defaultService->show():"null") << endl);
+
+    vector<xmlNodePtr>::iterator ait = accessElements.begin();
+    bool done = false;
+    ThreddsService *dapService=0, *fileService=0;
+    while(ait!=accessElements.end()){
+        xmlNodePtr accessElement = *ait;
+        ThreddsAccess tAccess(accessElement, defaultService);
+        if(tAccess.service->serviceType == OpenDAP){
+            dapService = tAccess.service;
+        }
+        else if(tAccess.service->serviceType == HTTPServer){
+            fileService = tAccess.service;
+        }
+        ait++;
+    }
 
     BESDEBUG(MODULE, prolog << "Dataset attributes. "
         << "id: '" << id << "' "
@@ -447,16 +574,21 @@ CatalogItem *get_dataset_leaf(xmlNode *datasetElement){
         << "title: '" << title << "' "
         << "type: '" << type << "' "
         << "urlPath: '" << urlPath << "' "
+        << "dataset_size: '" << dataset_size << "' "
+        << "defaultService: '" << (defaultService?defaultService->name:"null") << "' "
+        << "DAP Service: '" << (dapService?dapService->name:"null") << "' "
+        << "File Service: '" << (fileService?fileService->name:"null") << "' "
         << endl);
 
-    CatalogItem *catalogRef_node = new CatalogItem();
-    catalogRef_node->set_type(CatalogItem::leaf);
-    catalogRef_node->set_name(href);
+    CatalogItem *dataset_leaf = new CatalogItem();
+    dataset_leaf->set_type(CatalogItem::leaf);
+    dataset_leaf->set_name(href);
+    dataset_leaf->set_size(dataset_size);
 
-    // FIXME: Find the Last Modified Time! Probably a      thredds:dataset/thredds:date
-    catalogRef_node->set_lmt(BESUtil::get_time(true));
+    // FIXME: Find the Last Modified Time! Probably a thredds:dataset/thredds:date
+    dataset_leaf->set_lmt(BESUtil::get_time(true));
 
-    return catalogRef_node;
+    return dataset_leaf;
 }
 
 /**
@@ -478,10 +610,7 @@ void traverse_dataset(
     if(child_datasets.empty()){
         BESDEBUG(MODULE, prolog << "Processing leaf dataset: " << xmlNodeToString(datasetElement) << endl);
         // No child datasets so this is a leaf dataset.
-        ThreddsService *defaultService = get_default_service(catalog_doc, datasetElement, services);
-        BESDEBUG(MODULE, prolog << "Dataset default THREDDS Service:: " << (defaultService?defaultService->show():"null") << endl);
-
-        CatalogItem *dataset_leaf = get_dataset_leaf(datasetElement);
+        CatalogItem *dataset_leaf = get_dataset_leaf(datasetElement,services);
         items.insert(pair<string,CatalogItem*>(dataset_leaf->get_name(),dataset_leaf));
         return;
     }
@@ -631,7 +760,7 @@ void getDatasetsAsItem(xmlNode *startElement, vector<CatalogItem *> dataset_item
 #endif
 
 
-void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<std::string, ThreddsService *> &services) const
+void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<std::string, ThreddsService *> &services)
 {
     vector<xmlNode *> child_services;
     BESXMLUtils::GetChildren(startElement,SERVICE,child_services);
@@ -662,11 +791,26 @@ void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<st
             BESDEBUG(MODULE, prolog << err << endl);
             throw BESInternalError(err, __FILE__, __LINE__);
         }
-        thredds_srvc->serviceType = mit->second;
+        thredds_srvc->serviceTypeStr = mit->second;
+        string srvc_name_normalized = BESUtil::lowercase(thredds_srvc->serviceTypeStr);
+        if( srvc_name_normalized == "opendap"){
+            thredds_srvc->serviceType = OpenDAP;
+        }
+        else if ( srvc_name_normalized == "dods"){
+            thredds_srvc->serviceType = OpenDAP;
+        }
+        else if (srvc_name_normalized == "file"){
+            thredds_srvc->serviceType = HTTPServer;
+        }
+        else if ( srvc_name_normalized == "httpserver"){
+            thredds_srvc->serviceType = HTTPServer;
+        }
+        else if ( srvc_name_normalized == "compound"){
+            thredds_srvc->serviceType = Compound;
+        }
 
 
-        if(cmpnd_srvcs.size() != 0){
-
+        if(cmpnd_srvcs.size() != 0 && thredds_srvc->serviceType == threddsServiceType::Compound){
             // This is a compound service
             getCatalogServices(srvc,thredds_srvc->child_services);
             services.insert(thredds_srvc->child_services.begin(),thredds_srvc->child_services.end());
@@ -674,7 +818,6 @@ void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<st
         }
         else {
             // It's just a simple service...
-
             mit = attributes.find(BASE);
             if (mit == attributes.end()){
                 string err = (string) "THREDDS service declaration is missing the required " + BASE + " attribute.";
@@ -682,8 +825,6 @@ void ThreddsCatalogReader::getCatalogServices(xmlNode *startElement, std::map<st
                 throw BESInternalError(err, __FILE__, __LINE__);
             }
             thredds_srvc->base = mit->second;
-
-
             services.insert(pair<string, ThreddsService *>(thredds_srvc->name,thredds_srvc));
         }
         vit++;
@@ -724,10 +865,10 @@ xmlDocPtr parseXmlDoc(string xml_doc_str){
 
 
 /**
- * @brief Converts an Apache httpd directory page into a collection of bes::CatalogItems.
+ * @brief Converts an THREDDS catalog into a collection of bes::CatalogItems.
  *
- * If one considers each Apache httpd generated directory page to be equivalent to
- * a bes::CatalogNode then this method examines the contents of the httpd directory page and
+ * If one considers each THREDDS catalog to be equivalent to
+ * a bes::CatalogNode then this method examines the contents of the THREDDS catalog and
  * builds child node and leaf bes:CatalogItems based on what it finds.
  *
  * isData: The besCatalogItem objects that are leaves are evaluated against the BES_DEFAULT_CATALOG
@@ -739,7 +880,7 @@ xmlDocPtr parseXmlDoc(string xml_doc_str){
  * @param items The map (list sorted by href) of catalog Items generated by the scrape processes. The map's
  * key is the bes::CatalogItem::name().
  */
-void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::string, bes::CatalogItem *> &items) const
+void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::string, bes::CatalogItem *> &items)
 {
     const BESCatalogUtils *cat_utils = BESCatalogList::TheCatalogList()->find_catalog(BES_DEFAULT_CATALOG)->get_catalog_utils();
 
@@ -787,11 +928,11 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
         }
 
 
-       std::map<std::string, ThreddsService *> services;
+       // std::map<std::string, ThreddsService *> services;
        std::map<std::string, ThreddsService *>::iterator sit;
-       getCatalogServices(root_element,services);
-       sit = services.begin();
-       while(sit != services.end()){
+       getCatalogServices(root_element,d_catalog_services);
+       sit = d_catalog_services.begin();
+       while(sit != d_catalog_services.end()){
            ThreddsService *tsrvc = sit->second;
            BESDEBUG(MODULE, prolog << tsrvc->show() << endl);
            sit++;
@@ -802,7 +943,7 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
        while(thisElement && (thisElement != lastElement)){
            BESDEBUG(MODULE, prolog << "Processing " << xmlNodeToString(thisElement) << endl);
            if(eName == DATASET){
-               traverse_dataset(catalog_doc, thisElement, services, items);
+               traverse_dataset(catalog_doc, thisElement, d_catalog_services, items);
            }
            else if(eName == CATALOG_REF){
                CatalogItem *catalogRef_node = get_catalog_ref_node(attributes);
@@ -889,13 +1030,13 @@ void ThreddsCatalogReader::ingestThreddsCatalog(std::string url, std::map<std::s
  * @param path The path prefix that associates the location of this generated CatalogNode with it's
  * correct position in the local service path.
  */
-bes::CatalogNode *ThreddsCatalogReader::get_node(const string &url, const string &path) const
+bes::CatalogNode *ThreddsCatalogReader::get_node(const string &url, const string &path)
 {
     BESDEBUG(MODULE, prolog << "Processing url: '" << url << "'"<< endl);
     bes::CatalogNode *node = new bes::CatalogNode(path);
 
     if (BESUtil::endsWith(url, "catalog.xml") || BESUtil::endsWith(url, "/") ) {
-        // All thredds catalogs must end in catalog.xml or in /
+        // All thredds catalogs must end in "catalog.xml" or in "/"
         map<string, bes::CatalogItem *> items;
         ingestThreddsCatalog(url, items);
 

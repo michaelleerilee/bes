@@ -36,19 +36,57 @@
 
 namespace httpd_catalog {
 
+enum threddsServiceType {
+    ADDE,
+    DAP,
+    DODS, // Same as OpenDAP
+    OpenDAP,
+    OpenDAPG,
+    NetcdfSubset,
+    CdmRemote,
+    CdmFeature,
+    ncJSON,
+    H5Service,
+
+    // Bulk Transport
+    HTTPServer,
+    FTP,
+    GridFTP,
+    File,
+
+    // WebServices
+    ISO,
+    LAS,
+    NcML,
+    UDDC,
+    WCS,
+    WMS,
+    WSDL,
+
+    // offline
+    WebForm,
+
+    // THREDDS (TDS?)
+    Catalog,
+    Compound,
+    Resolver,
+    THREDDS
+};
+
 class ThreddsService {
 public:
     std::map<std::string, ThreddsService *> child_services;
     std::string base;
     std::string name;
-    std::string serviceType;
+    std::string serviceTypeStr;
+    threddsServiceType serviceType;
 
     std::string show(){
         std::stringstream ss;
 
         ss << "thredds service - ";
         ss << " name: " << name;
-        ss << " serviceType: " << serviceType;
+        ss << " serviceType: " << serviceTypeStr;
         if(child_services.empty()){
             // It's a a simple service.
             ss << " base: " << base << endl;
@@ -67,6 +105,30 @@ public:
 
 };
 
+class ThreddsAccess {
+private:
+    xmlNodePtr d_access;
+
+public:
+    std::string urlPath;
+    std::string dataFormat;
+    ThreddsService *service;
+
+    ThreddsAccess(xmlNodePtr accessElement,  ThreddsService *defaultService);
+    ThreddsService *getService();
+    std::string getAccessUrl();
+
+    std::string show(){
+        std::stringstream ss;
+        ss << "thredds access - ";
+        ss << " urlPath: " << urlPath;
+        ss << " service->name: " << service->name << " service: " << service;
+        return ss.str();
+    }
+
+};
+
+
 
 
 /**
@@ -79,15 +141,18 @@ public:
  */
 class ThreddsCatalogReader {
 private:
+    std::map<std::string, ThreddsService *> d_catalog_services;
 
-    void getCatalogServices(xmlNode *lastElement, std::map<std::string, ThreddsService *> &services) const;
-    void ingestThreddsCatalog(std::string url, std::map<std::string, bes::CatalogItem *> &items) const;
+    void getCatalogServices(xmlNode *lastElement, std::map<std::string, ThreddsService *> &services);
+    void ingestThreddsCatalog(std::string url, std::map<std::string, bes::CatalogItem *> &items);
 
 public:
     ThreddsCatalogReader();
     virtual ~ThreddsCatalogReader() { }
-    virtual bes::CatalogNode *get_node(const std::string &url, const std::string &path) const;
+    virtual bes::CatalogNode *get_node(const std::string &url, const std::string &path);
 };
+
+
 } // namespace httpd_catalog
 
 #endif /* M_httpdd_catalog_ThreddsCatalogReader_H_ */
