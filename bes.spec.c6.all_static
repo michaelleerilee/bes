@@ -11,8 +11,8 @@
 %define hyraxsharedir %{_datadir}/hyrax
 
 Name:           bes
-Version:        3.20.0
-Release:        2.static%{?dist}
+Version:        3.20.1
+Release:        1.static%{?dist}
 Summary:        Back-end server software framework for OPeNDAP
 
 Group:          System Environment/Libraries
@@ -207,6 +207,9 @@ exit 0
 %attr (-,%{besuser},%{besgroup}) %{beslogdir}
 %attr (-,%{besuser},%{besgroup}) %{bespiddir}
 %attr (-,%{besuser},%{besgroup}) %{bescachedir}
+
+# Make sure that the BES, once runnin g, can write to the MDS directory. jhrg 11/7/18
+%attr (-,%{besuser},%{besgroup}) %{_datadir}/mds/
 
 # Not part of C6, see above. jhrg 9/25/18
 # %{_tmpfilesdir}/%{name}.conf

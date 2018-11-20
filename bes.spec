@@ -10,8 +10,8 @@
 %define hyraxsharedir %{_datadir}/hyrax
 
 Name:           bes
-Version:        3.20.0
-Release:        2%{?dist}
+Version:        3.20.1
+Release:        1%{?dist}
 Summary:        Back-end server software framework for OPeNDAP
 
 Group:          System Environment/Libraries
@@ -167,6 +167,8 @@ exit 0
 
 %{_datadir}/hyrax/
 
+%{_datadir}/mds/
+
 %{_bindir}/beslistener
 %{_bindir}/besdaemon
 # %{_bindir}/besd # moved to /etc/rc.d/init.d; see below.
@@ -189,6 +191,9 @@ exit 0
 %attr (-,%{besuser},%{besgroup}) %{beslogdir}
 %attr (-,%{besuser},%{besgroup}) %{bespiddir}
 %attr (-,%{besuser},%{besgroup}) %{bescachedir}
+
+# Make sure that the BES, once runnin g, can write to the MDS directory. jhrg 11/7/18
+%attr (-,%{besuser},%{besgroup}) %{_datadir}/mds/
 
 %files devel
 %defattr(-,root,root,-)
