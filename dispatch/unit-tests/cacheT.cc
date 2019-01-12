@@ -344,13 +344,13 @@ public:
     void test_missing_cache_dir_cache_creation()
     {
         DBG(cerr << endl << __func__ << "() - BEGIN " << endl);
+        //Only run this test if you don't have access (mainly for in case something is built in root)
         try {
-        	//Only run this test if you don't have access (mainly for in case something is built in root)
-        		if (access("/", W_OK) != 0) {
-        			BESFileLockingCache cache("/dummy", CACHE_PREFIX, 0);
-        			CPPUNIT_ASSERT(!"Created cache with non-existent dir");
-        		}
-        }
+		   if (access("/", W_OK) != 0) {
+			BESFileLockingCache cache("/dummy", CACHE_PREFIX, 0);
+			CPPUNIT_ASSERT(!"Created cache with non-existent dir");
+		   }
+		}
         catch (BESError &e) {
             DBG(
                 cerr << __func__ << "() - Unable to create cache in non-existent dir. " << "That's good. msg: "
