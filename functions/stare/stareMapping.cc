@@ -10,8 +10,7 @@
  *      																*
  ********************************************************************/
 
-#include "SpatialIndex.h"
-#include "SpatialInterface.h"
+#include "STARE.h"
 
 #include <D4Connect.h>
 #include <Connect.h>
@@ -50,9 +49,11 @@ struct coords {
  */
 void findLatLon(std::string dataUrl, const float64 level,
 	const float64 buildlevel, vector<int> &xArray, vector<int> &yArray, vector<float> &latArray, vector<float> &lonArray, vector<uint64> &stareArray) {
+	
 	//Create an htmInterface that will be used to get the STARE index
-	htmInterface htm(level, buildlevel);
-	const SpatialIndex &index = htm.index();
+	STARE index(level,buildlevel);
+  // STARE index();
+	// STARE index(searchlevel,buildlevel); // Constructor not implemented. mlr 7/3/19
 
 	auto_ptr < libdap::Connect > url(new libdap::Connect(dataUrl));
 
@@ -145,7 +146,7 @@ void findLatLon(std::string dataUrl, const float64 level,
 			indexVals.y = offset % (size_x - 1);//Get the current index for the lat
 			indexVals.lat = *i;
 			indexVals.lon = *j;
-			indexVals.stareIndex = index.idByLatLon(*i, *j);//Use the lat/lon values to calculate the Stare index
+			indexVals.stareIndex = index.ValueFromLatLonDegrees(*i,*j,level); //Use the lat/lon values to calculate the Stare index
 
 			//Map the STARE index value to the x,y indices
 			indexMap[indexVals.stareIndex] = indexVals;
